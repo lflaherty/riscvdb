@@ -18,7 +18,7 @@ std::string ConsoleCommand::helpStr() { return std::string(); }
 std::string ConsoleCommand::extendedHelpStr() { return std::string(); }
 
 Console::Console() {
-  addCmd(std::make_shared<CmdHelp>(this));
+  addCmd(std::make_shared<CmdHelp>(*this));
   addCmd(std::make_shared<CmdQuit>());
 }
 
