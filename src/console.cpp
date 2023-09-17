@@ -18,8 +18,8 @@ std::string ConsoleCommand::helpStr() { return std::string(); }
 std::string ConsoleCommand::extendedHelpStr() { return std::string(); }
 
 Console::Console() {
-  addCmd<CmdHelp>();
-  addCmd<CmdQuit>();
+  addCmd(std::make_shared<CmdHelp>(this));
+  addCmd(std::make_shared<CmdQuit>());
 }
 
 int Console::run() {
@@ -37,17 +37,11 @@ int Console::run() {
         continue;
     }
 
-    // special cases:
-    if (tokens[0] == "help" || tokens[0] == "h") {
-        parseHelp(tokens);
-        continue;
-    }
-
-    // find general commands
+    // general commands
     std::map<std::string, std::shared_ptr<ConsoleCommand>>::iterator cmdIt;
     cmdIt = m_commandsLong.find(tokens[0]);
     if (cmdIt != m_commandsLong.end()) {
-        ConsoleCommand::CmdRetType ret = cmdIt->second->run();
+        ConsoleCommand::CmdRetType ret = cmdIt->second->run(tokens);
         if (ret == ConsoleCommand::CmdRetType_QUIT) {
             break;
         }
@@ -56,7 +50,7 @@ int Console::run() {
 
     cmdIt = m_commandsShort.find(tokens[0]);
     if (cmdIt != m_commandsShort.end()) {
-        ConsoleCommand::CmdRetType ret = cmdIt->second->run();
+        ConsoleCommand::CmdRetType ret = cmdIt->second->run(tokens);
         if (ret == ConsoleCommand::CmdRetType_QUIT) {
             break;
         }
@@ -64,19 +58,6 @@ int Console::run() {
     }
   }
   return 0;
-}
-
-void Console::parseHelp(std::vector<std::string>& args) {
-    switch (args.size()) {
-        case 1:
-            printHelp();
-            break;
-        case 2:
-            printHelpCmd(args[1]);
-            break;
-        default:
-            std::cerr << "error: unexpected parameters" << std::endl;
-    }
 }
 
 void Console::printHelp() {
@@ -107,6 +88,20 @@ void Console::printHelp() {
 void Console::printHelpCmd(std::string& cmdName) {
     (void)cmdName;
     // TODO
+}
+
+void Console::addCmd(std::shared_ptr<ConsoleCommand> cmd) {
+    std::string nameLong = cmd->nameLong();
+    std::string nameShort = cmd->nameShort();
+
+    // make sure the command is not already registered
+    assert(m_commandsLong.find(nameLong) == m_commandsLong.end());
+    assert(m_commandsLong.find(nameShort) == m_commandsLong.end());
+    assert(m_commandsShort.find(nameLong) == m_commandsShort.end());
+    assert(m_commandsShort.find(nameShort) == m_commandsShort.end());
+    
+    m_commandsLong[nameLong] = cmd;
+    m_commandsShort[nameShort] = cmd;
 }
 
 } // namespace riscvdb

@@ -4,7 +4,12 @@
 
 namespace riscvdb {
 
-ConsoleCommand::CmdRetType CmdQuit::run() {
+ConsoleCommand::CmdRetType CmdQuit::run(std::vector<std::string>& args) {
+  if (args.size() > 1) {
+    std::cerr << "error: unexpected number of args" << std::endl;
+    return CmdRetType_ERROR;
+  }
+
   return CmdRetType_QUIT;
 }
 

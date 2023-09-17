@@ -2,16 +2,22 @@
 #define RISCVDB_COMMANDS_HELP_H
 
 #include "console.h"
+#include <vector>
 #include <string>
+#include <memory>
 
 namespace riscvdb {
 
 class CmdHelp : public ConsoleCommand {
 public:
-  ConsoleCommand::CmdRetType run();
-  std::string nameLong();
-  std::string nameShort();
-  std::string helpStr();
+    CmdHelp(Console* console);
+    ConsoleCommand::CmdRetType run(std::vector<std::string>& args);
+    std::string nameLong();
+    std::string nameShort();
+    std::string helpStr();
+
+private:
+    Console* m_console;
 };
 
 } // namespace riscvdb

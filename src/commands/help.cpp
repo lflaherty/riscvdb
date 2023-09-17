@@ -4,9 +4,22 @@
 
 namespace riscvdb {
 
-ConsoleCommand::CmdRetType CmdHelp::run() {
-    // This shouldn't be executed directly
-    return CmdRetType_ERROR;
+CmdHelp::CmdHelp(Console* console) : m_console(console) {}
+
+ConsoleCommand::CmdRetType CmdHelp::run(std::vector<std::string>& args) {
+    switch (args.size()) {
+        case 1:
+            m_console->printHelp();
+            break;
+        case 2:
+            m_console->printHelpCmd(args[1]);
+            break;
+        default:
+            std::cerr << "error: unexpected parameters" << std::endl;
+            return CmdRetType_ERROR;
+    }
+
+    return CmdRetType_OK;
 }
 
 std::string CmdHelp::nameLong() { return "help"; }

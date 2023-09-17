@@ -8,10 +8,10 @@ namespace riscvdb {
 
 class CmdQuit : public ConsoleCommand {
 public:
-  ConsoleCommand::CmdRetType run();
-  std::string nameLong();
-  std::string nameShort();
-  std::string helpStr();
+    ConsoleCommand::CmdRetType run(std::vector<std::string>& args);
+    std::string nameLong();
+    std::string nameShort();
+    std::string helpStr();
 };
 
 } // namespace riscvdb
