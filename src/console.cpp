@@ -23,41 +23,30 @@ Console::Console() {
 }
 
 int Console::run() {
-  while (true) {
-    std::cout << "> ";
+    while (true) {
+        std::cout << "> ";
 
-    std::string input;
-    std::getline(std::cin, input);
+        std::string input;
+        std::getline(std::cin, input);
 
-    std::istringstream buffer(input);
-    std::vector<std::string> tokens{std::istream_iterator<std::string>(buffer),
-                                    std::istream_iterator<std::string>()};
-    
-    if (tokens.size() == 0) {
-        continue;
-    }
+        std::istringstream buffer(input);
+        std::vector<std::string> tokens{std::istream_iterator<std::string>(buffer),
+                                        std::istream_iterator<std::string>()};
 
-    // general commands
-    std::map<std::string, std::shared_ptr<ConsoleCommand>>::iterator cmdIt;
-    cmdIt = m_commandsLong.find(tokens[0]);
-    if (cmdIt != m_commandsLong.end()) {
-        ConsoleCommand::CmdRetType ret = cmdIt->second->run(tokens);
-        if (ret == ConsoleCommand::CmdRetType_QUIT) {
-            break;
+        if (tokens.size() == 0) {
+            continue;
         }
-        continue;
-    }
 
-    cmdIt = m_commandsShort.find(tokens[0]);
-    if (cmdIt != m_commandsShort.end()) {
-        ConsoleCommand::CmdRetType ret = cmdIt->second->run(tokens);
-        if (ret == ConsoleCommand::CmdRetType_QUIT) {
-            break;
+        // general commands
+        std::shared_ptr<ConsoleCommand> cmd = findCmd(tokens[0]);
+        if (cmd) {
+            ConsoleCommand::CmdRetType ret = cmd->run(tokens);
+            if (ret == ConsoleCommand::CmdRetType_QUIT) {
+                break;
+            }
         }
-        continue;
     }
-  }
-  return 0;
+    return 0;
 }
 
 void Console::printHelp() {
@@ -86,8 +75,13 @@ void Console::printHelp() {
 }
 
 void Console::printHelpCmd(std::string& cmdName) {
-    (void)cmdName;
-    // TODO
+    std::shared_ptr<ConsoleCommand> cmd = findCmd(cmdName);
+    std::cout << cmd->helpStr() << std::endl;
+
+    std::string extendedHelp = cmd->extendedHelpStr();
+    if (extendedHelp.length() > 0) {
+        std::cout << extendedHelp << std::endl;
+    }
 }
 
 void Console::addCmd(std::shared_ptr<ConsoleCommand> cmd) {
@@ -102,6 +96,22 @@ void Console::addCmd(std::shared_ptr<ConsoleCommand> cmd) {
     
     m_commandsLong[nameLong] = cmd;
     m_commandsShort[nameShort] = cmd;
+}
+
+std::shared_ptr<ConsoleCommand> Console::findCmd(std::string& cmdName) {
+    std::map<std::string, std::shared_ptr<ConsoleCommand>>::iterator cmdIt;
+    cmdIt = m_commandsLong.find(cmdName);
+    if (cmdIt != m_commandsLong.end()) {
+        return cmdIt->second;
+    }
+
+    cmdIt = m_commandsShort.find(cmdName);
+    if (cmdIt != m_commandsShort.end()) {
+        return cmdIt->second;
+    }
+
+    std::cerr << "error: unknown command " << cmdName << std::endl;
+    return nullptr;
 }
 
 } // namespace riscvdb

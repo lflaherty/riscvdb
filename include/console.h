@@ -35,6 +35,7 @@ public:
 
 private:
     void addCmd(std::shared_ptr<ConsoleCommand> cmd);
+    std::shared_ptr<ConsoleCommand> findCmd(std::string& cmdName);
 
     std::map<std::string, std::shared_ptr<ConsoleCommand>> m_commandsLong;
     std::map<std::string, std::shared_ptr<ConsoleCommand>> m_commandsShort;
