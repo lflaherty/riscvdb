@@ -1,5 +1,6 @@
 #include <iostream>
 #include "cxxopts.hpp"
+#include "console.h"
 
 int main(int argc, char* argv[])
 {
@@ -30,8 +31,9 @@ int main(int argc, char* argv[])
     if (result.count("executable"))
     {
         std::string binFile = result["executable"].as<std::string>();
-        std::cout << "Loading bin file " << binFile << std::endl;
+        // TODO use binFile
     }
 
-    return 0;
+    riscvdb::Console console;
+    return console.run();
 }
