@@ -9,6 +9,13 @@
 
 // commands:
 #include "commands/help.h"
+#include "commands/load.h"
+#include "commands/run.h"
+#include "commands/continue.h"
+#include "commands/break.h"
+#include "commands/delete.h"
+#include "commands/print.h"
+#include "commands/next.h"
 #include "commands/quit.h"
 
 namespace riscvdb {
@@ -19,6 +26,12 @@ std::string ConsoleCommand::extendedHelpStr() { return std::string(); }
 
 Console::Console() {
   addCmd(std::make_shared<CmdHelp>(*this));
+  addCmd(std::make_shared<CmdLoad>());
+  addCmd(std::make_shared<CmdRun>());
+  addCmd(std::make_shared<CmdContinue>());
+  addCmd(std::make_shared<CmdBreak>());
+  addCmd(std::make_shared<CmdPrint>());
+  addCmd(std::make_shared<CmdNext>());
   addCmd(std::make_shared<CmdQuit>());
 }
 
