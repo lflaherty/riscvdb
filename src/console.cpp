@@ -24,7 +24,7 @@ Console::Console() {
 
 int Console::run() {
     while (true) {
-        std::cout << "> ";
+        std::cout << "(riscvdb) ";
 
         std::string input;
         std::getline(std::cin, input);
