@@ -1,6 +1,8 @@
 #ifndef RISCVDB_SIMHOST_H
 #define RISCVDB_SIMHOST_H
 
+#include "fileloader.h"
+
 namespace riscvdb
 {
 
@@ -14,6 +16,7 @@ public:
     };
 
     SimHost();
+    int LoadFile(FileLoader& loader);
 
     SimState GetState() const;
 

@@ -1,7 +1,9 @@
 #include <iostream>
+#include <filesystem>
 #include "cxxopts.hpp"
 #include "console.h"
 #include "simhost.h"
+#include "fileloader.h"
 
 int main(int argc, char* argv[])
 {
@@ -29,13 +31,28 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    riscvdb::SimHost simHost;
+
     if (result.count("executable"))
     {
-        std::string binFile = result["executable"].as<std::string>();
-        // TODO use binFile
+        std::string pathStr = result["executable"].as<std::string>();
+        std::filesystem::path path(pathStr);
+        std::string ext = path.extension();
+
+        std::cout << "Loading executable " << pathStr << std::endl;
+
+        if (ext == riscvdb::ElfFileLoader::EXT) {
+            riscvdb::ElfFileLoader elfFileLoader(pathStr);
+            simHost.LoadFile(elfFileLoader);
+        } else if (ext == std::string(".bin")) {
+            std::cerr << "raw binaries not yet supported" << std::endl;
+            return -1;
+        } else {
+            std::cerr << "unexpected filetype " << ext << std::endl;
+            return -1;
+        }
     }
 
-    riscvdb::SimHost simHost;
     riscvdb::Console console(simHost);
     return console.run();
 }
