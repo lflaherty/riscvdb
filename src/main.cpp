@@ -37,18 +37,33 @@ int main(int argc, char* argv[])
     {
         std::string pathStr = result["executable"].as<std::string>();
         std::filesystem::path path(pathStr);
-        std::string ext = path.extension();
+
+        if (!std::filesystem::exists(path))
+        {
+            std::cerr << "File " << pathStr << " does not exist" << std::endl;
+            return -1;
+        }
 
         std::cout << "Loading executable " << pathStr << std::endl;
 
-        if (ext == riscvdb::ElfFileLoader::EXT) {
-            riscvdb::ElfFileLoader elfFileLoader(pathStr);
-            simHost.LoadFile(elfFileLoader);
-        } else if (ext == std::string(".bin")) {
-            std::cerr << "raw binaries not yet supported" << std::endl;
-            return -1;
-        } else {
-            std::cerr << "unexpected filetype " << ext << std::endl;
+        std::string ext = path.extension();
+        try
+        {
+            if (ext == riscvdb::ElfFileLoader::EXT) {
+                riscvdb::ElfFileLoader elfFileLoader(pathStr);
+                simHost.LoadFile(elfFileLoader);
+            } else if (ext == std::string(".bin")) {
+                std::cerr << "raw binaries not yet supported" << std::endl;
+                return -1;
+            } else {
+                std::cerr << "unexpected filetype " << ext << std::endl;
+                return -1;
+            }
+        }
+        catch (std::runtime_error& err)
+        {
+            std::cerr << "failed to load file" << std::endl;
+            std::cerr << err.what() << std::endl;
             return -1;
         }
     }
