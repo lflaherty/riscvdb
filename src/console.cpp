@@ -6,6 +6,7 @@
 #include <vector>
 #include <iomanip>
 #include <algorithm>
+#include <iterator>
 
 // commands:
 #include "commands/help.h"
@@ -24,7 +25,8 @@ std::string ConsoleCommand::helpStr() { return std::string(); }
 
 std::string ConsoleCommand::extendedHelpStr() { return std::string(); }
 
-Console::Console() {
+Console::Console(SimHost& simHost)
+: m_sim(simHost) {
   addCmd(std::make_shared<CmdHelp>(*this));
   addCmd(std::make_shared<CmdLoad>());
   addCmd(std::make_shared<CmdRun>());
@@ -33,6 +35,18 @@ Console::Console() {
   addCmd(std::make_shared<CmdPrint>());
   addCmd(std::make_shared<CmdNext>());
   addCmd(std::make_shared<CmdQuit>());
+  /*
+   * TODO commands to add:
+   *    script  # exec script
+   *    load
+   *    run
+   *    break {pc}
+   *    step {num instructions}
+   *    jump
+   *    continue
+   *    register {reg} (or x {reg})
+   *    memory {address} {size} (or m {address} {size})
+   */
 }
 
 int Console::run() {
