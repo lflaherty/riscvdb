@@ -9,4 +9,7 @@ add_subdirectory(src)
 
 target_include_directories(riscvdb PUBLIC include)
 
+# Enable extra warnings
 target_compile_options(riscvdb PRIVATE -Wall -Wextra -Wpedantic -Werror)
+# Optimize
+target_compile_options(riscvdb PRIVATE -O3)

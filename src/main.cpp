@@ -1,6 +1,7 @@
 #include <iostream>
 #include "cxxopts.hpp"
 #include "console.h"
+#include "simhost.h"
 
 int main(int argc, char* argv[])
 {
@@ -34,6 +35,7 @@ int main(int argc, char* argv[])
         // TODO use binFile
     }
 
-    riscvdb::Console console;
+    riscvdb::SimHost simHost;
+    riscvdb::Console console(simHost);
     return console.run();
 }
