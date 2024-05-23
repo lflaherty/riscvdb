@@ -15,3 +15,5 @@ target_include_directories(riscvdb_test PUBLIC ${ROOT_DIR}/include)
 target_compile_options(riscvdb_test PRIVATE -Wall -Wextra -Wpedantic -Werror)
 # Optimize
 target_compile_options(riscvdb_test PRIVATE -O3)
+# Debug
+target_compile_options(riscvdb_test PRIVATE -g3)
