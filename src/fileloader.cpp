@@ -43,28 +43,68 @@ ElfFileLoader::ElfFileLoader(const std::string& path)
     LoadHeader();
 }
 
+void ElfFileLoader::LoadMemory(MemoryMap& mem)
+{
+    std::cout << "Found program headers:" << std::endl;
+
+    Elf32_Off offset = m_header.e_phoff;
+    for (Elf32_Half i = 0; i < m_header.e_phnum; ++i)
+    {
+        std::cout << i << " ";
+
+        Elf32_Phdr progHdr;
+        std::memcpy(&progHdr, m_filebytes.data() + offset,
+                    sizeof(progHdr));
+
+        offset += sizeof(progHdr);
+
+        if (progHdr.p_type == PT_LOAD)
+        {
+            std::cout << "LOAD" << std::endl;
+            std::cout << "    VirtAddr = " << progHdr.p_paddr << std::endl;
+            std::cout << "    MemSize  = " << progHdr.p_memsz << std::endl;
+
+            // TODO probably don't need an intermediate copy...
+            std::vector<std::byte> sectionData(progHdr.p_filesz);
+            std::copy(m_filebytes.begin() + progHdr.p_offset,
+                      m_filebytes.begin() + progHdr.p_offset + progHdr.p_filesz,
+                      sectionData.begin());
+
+            mem.Put(progHdr.p_paddr, sectionData);
+        }
+        else
+        {
+            std::cout << "(unknown)" << std::endl;
+        }
+    }
+}
+
+ElfFileLoader::ElfClass ElfFileLoader::GetElfClass() const
+{
+    return m_elfClass;
+}
+
 void ElfFileLoader::LoadHeader()
 {
-    Elf32_Ehdr header;
-    std::size_t headerSize = sizeof(header);
+    std::size_t headerSize = sizeof(m_header);
 
     if (m_filebytes.size() < headerSize)
     {
         throw std::runtime_error("invalid elf file: header too small");
     }
 
-    std::memcpy(&header, m_filebytes.data(), headerSize);
+    std::memcpy(&m_header, m_filebytes.data(), headerSize);
 
-    if (!(header.e_ident[EI_MAG0] == ELFMAG0 &&  // magic 0x7F
-          header.e_ident[EI_MAG1] == ELFMAG1 &&  // 'E'
-          header.e_ident[EI_MAG2] == ELFMAG2 &&  // 'L'
-          header.e_ident[EI_MAG3] == ELFMAG3))   // 'F'
+    if (!(m_header.e_ident[EI_MAG0] == ELFMAG0 &&  // magic 0x7F
+          m_header.e_ident[EI_MAG1] == ELFMAG1 &&  // 'E'
+          m_header.e_ident[EI_MAG2] == ELFMAG2 &&  // 'L'
+          m_header.e_ident[EI_MAG3] == ELFMAG3))   // 'F'
     {
         // identification bytes don't match
         throw std::runtime_error("invalid elf file: bad identification bytes");
     }
 
-    unsigned char elfClass = header.e_ident[EI_CLASS];
+    unsigned char elfClass = m_header.e_ident[EI_CLASS];
     switch (elfClass)
     {
         case ELFCLASS32:
@@ -80,12 +120,12 @@ void ElfFileLoader::LoadHeader()
             throw std::runtime_error("invalid elf file: invalid class");
     }
 
-    if (header.e_machine != EM_RISCV)
+    if (m_header.e_machine != EM_RISCV)
     {
         throw std::runtime_error("invalid elf file: not RISC V machine");
     }
 
-    if (header.e_type != ET_EXEC)
+    if (m_header.e_type != ET_EXEC)
     {
         throw std::runtime_error("invalid elf file: only executable files are supported");
     }

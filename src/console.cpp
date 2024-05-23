@@ -16,6 +16,7 @@
 #include "commands/break.h"
 #include "commands/delete.h"
 #include "commands/print.h"
+#include "commands/memory.h"
 #include "commands/next.h"
 #include "commands/quit.h"
 
@@ -33,6 +34,7 @@ Console::Console(SimHost& simHost)
   addCmd(std::make_shared<CmdContinue>());
   addCmd(std::make_shared<CmdBreak>());
   addCmd(std::make_shared<CmdPrint>());
+  addCmd(std::make_shared<CmdMemory>(simHost.Memory()));
   addCmd(std::make_shared<CmdNext>());
   addCmd(std::make_shared<CmdQuit>());
   /*
@@ -47,6 +49,7 @@ Console::Console(SimHost& simHost)
    *    register {reg} (or x {reg})
    *    memory {address} {size} (or m {address} {size})
    */
+  (void)m_sim;
 }
 
 int Console::run() {

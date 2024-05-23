@@ -3,6 +3,7 @@ add_executable(riscvdb
     console.cpp
     simhost.cpp
     fileloader.cpp
+    memorymap.cpp
 )
 
 add_subdirectory(commands)

@@ -13,22 +13,23 @@ static const unsigned long DEFAULT_BLOCK_SIZE = 1024; // 1 KiB
 
 class MemoryMap {
 public:
+    typedef unsigned long AddrType;
 
-    MemoryMap(const unsigned long memAddrStart, const unsigned long memSize);
+    MemoryMap(const AddrType memAddrStart, const AddrType memSize);
 
     std::size_t BlockSize() const;
 
-    void Put(const unsigned long address, const std::byte& data);
-    void Put(const unsigned long address, const std::vector<std::byte>& data);
-    void Get(const unsigned long address, std::byte& data_out);
+    void Put(const AddrType address, const std::byte& data);
+    void Put(const AddrType address, const std::vector<std::byte>& data);
+    void Get(const AddrType address, std::byte& data_out);
 
 private:
-    const unsigned long m_addrLower;
-    const unsigned long m_addrUpper;
-    const unsigned long m_memSize;
+    const AddrType m_addrLower;
+    const AddrType m_addrUpper;
+    const AddrType m_memSize;
 
     typedef std::array<std::byte, DEFAULT_BLOCK_SIZE> MemBlockType;
-    std::unordered_map<unsigned long, std::unique_ptr<MemBlockType>> m_mem;
+    std::unordered_map<AddrType, std::unique_ptr<MemBlockType>> m_mem;
 };
 
 } // namespace riscvdb
