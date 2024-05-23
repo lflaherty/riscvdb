@@ -3,11 +3,16 @@
 
 #include <string>
 #include <vector>
+#include "elf.h"
+#include "memorymap.h"
 
 namespace riscvdb
 {
 
 class FileLoader {
+public:
+    virtual void LoadMemory(MemoryMap& mem) = 0;
+
 protected:
     void LoadFile(const std::string& path);
 
@@ -24,6 +29,8 @@ public:
 
     ElfFileLoader(const std::string& path);
 
+    void LoadMemory(MemoryMap& mem);
+
     ElfClass GetElfClass() const;
 
     static const std::string EXT;
@@ -32,6 +39,7 @@ private:
     // Checks whether m_filebytes contains a valid ELF file
     void LoadHeader();
 
+    Elf32_Ehdr m_header;
     ElfClass m_elfClass;
 };
 
