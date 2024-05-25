@@ -29,6 +29,8 @@ public:
 
 class Console {
 public:
+    static const std::string CONSOLE_PROMPT;
+
     Console(SimHost& simHost);
     int run();
     void printHelp();

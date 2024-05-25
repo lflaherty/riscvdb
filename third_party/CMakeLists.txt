@@ -1,3 +1,6 @@
-# Expose cxxopts' includ direcotry
-set(CXXOPTS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cxxopts/include
-    CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
+# cxxopts
+target_include_directories(riscvdb PRIVATE cxxopts/include)
+
+# linenoise
+target_include_directories(riscvdb PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/linenoise)
+target_sources(riscvdb PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/linenoise/linenoise.c)
