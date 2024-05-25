@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <iterator>
 
+#include "linenoise_wrapper.h"
+
 // commands:
 #include "commands/help.h"
 #include "commands/load.h"
@@ -26,38 +28,64 @@ std::string ConsoleCommand::helpStr() { return std::string(); }
 
 std::string ConsoleCommand::extendedHelpStr() { return std::string(); }
 
+const std::string Console::CONSOLE_PROMPT = "(riscvdb) ";
+
 Console::Console(SimHost& simHost)
 : m_sim(simHost) {
-  addCmd(std::make_shared<CmdHelp>(*this));
-  addCmd(std::make_shared<CmdLoad>());
-  addCmd(std::make_shared<CmdRun>());
-  addCmd(std::make_shared<CmdContinue>());
-  addCmd(std::make_shared<CmdBreak>());
-  addCmd(std::make_shared<CmdPrint>());
-  addCmd(std::make_shared<CmdMemory>(simHost.Memory()));
-  addCmd(std::make_shared<CmdNext>());
-  addCmd(std::make_shared<CmdQuit>());
-  /*
-   * TODO commands to add:
-   *    script  # exec script
-   *    load
-   *    run
-   *    break {pc}
-   *    step {num instructions}
-   *    jump
-   *    continue
-   *    register {reg} (or x {reg})
-   *    memory {address} {size} (or m {address} {size})
-   */
-  (void)m_sim;
+    addCmd(std::make_shared<CmdHelp>(*this));
+    addCmd(std::make_shared<CmdLoad>());
+    addCmd(std::make_shared<CmdRun>());
+    addCmd(std::make_shared<CmdContinue>());
+    addCmd(std::make_shared<CmdBreak>());
+    addCmd(std::make_shared<CmdPrint>());
+    addCmd(std::make_shared<CmdMemory>(simHost.Memory()));
+    addCmd(std::make_shared<CmdNext>());
+    addCmd(std::make_shared<CmdQuit>());
+    /*
+    * TODO commands to add:
+    *    script  # exec script
+    *    load
+    *    run
+    *    break {pc}
+    *    step {num instructions}
+    *    jump
+    *    continue
+    *    register {reg} (or x {reg})
+    *    memory {address} {size} (or m {address} {size})
+    */
+   (void)m_sim;
+
+    using namespace linenoise_wrapper;
+    Linenoise::setHintAppearance(Linenoise::COLOR_MAGENTA, false);
+
+    std::map<std::string, std::shared_ptr<ConsoleCommand>>::iterator it;
+    for (it = m_commandsLong.begin(); it != m_commandsLong.end(); it++)
+    {
+        std::stringstream ss;
+        ss << it->second->nameLong();
+        ss << " "; // add a space - easier for the user to type the next argument
+        Linenoise::addCompletion(ss.str());
+    }
 }
 
 int Console::run() {
-    while (true) {
-        std::cout << "(riscvdb) ";
+    using namespace linenoise_wrapper;
 
+    while (true) {
         std::string input;
-        std::getline(std::cin, input);
+        Linenoise::ReturnCode ret = Linenoise::next(input, CONSOLE_PROMPT);
+
+        if (ret == Linenoise::RETURN_QUIT || ret == Linenoise::RETURN_CTRLD)
+        {
+            std::cout << "Quitting" << std::endl;
+            break;
+        }
+
+        if (ret == Linenoise::RETURN_CTRLC)
+        {
+            std::cout << "^C" << std::endl;
+            continue;
+        }
 
         std::istringstream buffer(input);
         std::vector<std::string> tokens{std::istream_iterator<std::string>(buffer),
