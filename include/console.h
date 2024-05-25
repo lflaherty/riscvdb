@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <cassert>
+#include "simhost.h"
 
 namespace riscvdb {
 
@@ -28,7 +29,7 @@ public:
 
 class Console {
 public:
-    Console();
+    Console(SimHost& simHost);
     int run();
     void printHelp();
     void printHelpCmd(std::string& cmdName);
@@ -39,6 +40,8 @@ private:
 
     std::map<std::string, std::shared_ptr<ConsoleCommand>> m_commandsLong;
     std::map<std::string, std::shared_ptr<ConsoleCommand>> m_commandsShort;
+
+    SimHost& m_sim;
 };
 
 } // namespace riscvdb

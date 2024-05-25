@@ -6,6 +6,7 @@ target_sources(riscvdb PRIVATE
     break.cpp
     delete.cpp
     print.cpp
+    memory.cpp
     next.cpp
     quit.cpp
 )

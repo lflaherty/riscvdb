@@ -6,6 +6,7 @@
 #include <vector>
 #include <iomanip>
 #include <algorithm>
+#include <iterator>
 
 // commands:
 #include "commands/help.h"
@@ -15,6 +16,7 @@
 #include "commands/break.h"
 #include "commands/delete.h"
 #include "commands/print.h"
+#include "commands/memory.h"
 #include "commands/next.h"
 #include "commands/quit.h"
 
@@ -24,15 +26,30 @@ std::string ConsoleCommand::helpStr() { return std::string(); }
 
 std::string ConsoleCommand::extendedHelpStr() { return std::string(); }
 
-Console::Console() {
+Console::Console(SimHost& simHost)
+: m_sim(simHost) {
   addCmd(std::make_shared<CmdHelp>(*this));
   addCmd(std::make_shared<CmdLoad>());
   addCmd(std::make_shared<CmdRun>());
   addCmd(std::make_shared<CmdContinue>());
   addCmd(std::make_shared<CmdBreak>());
   addCmd(std::make_shared<CmdPrint>());
+  addCmd(std::make_shared<CmdMemory>(simHost.Memory()));
   addCmd(std::make_shared<CmdNext>());
   addCmd(std::make_shared<CmdQuit>());
+  /*
+   * TODO commands to add:
+   *    script  # exec script
+   *    load
+   *    run
+   *    break {pc}
+   *    step {num instructions}
+   *    jump
+   *    continue
+   *    register {reg} (or x {reg})
+   *    memory {address} {size} (or m {address} {size})
+   */
+  (void)m_sim;
 }
 
 int Console::run() {
