@@ -1,3 +1,6 @@
 [submodule "cxxopts"]
 	path = third_party/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
+[submodule "third_party/linenoise"]
+	path = third_party/linenoise
+	url = https://github.com/antirez/linenoise.git
