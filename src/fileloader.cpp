@@ -47,6 +47,8 @@ void ElfFileLoader::LoadMemory(MemoryMap& mem)
 {
     std::cout << "Found program headers:" << std::endl;
 
+    MemoryMap::AddrType loadedSize = 0;
+
     Elf32_Off offset = m_header.e_phoff;
     for (Elf32_Half i = 0; i < m_header.e_phnum; ++i)
     {
@@ -60,9 +62,12 @@ void ElfFileLoader::LoadMemory(MemoryMap& mem)
 
         if (progHdr.p_type == PT_LOAD)
         {
-            std::cout << "LOAD" << std::endl;
-            std::cout << "    VirtAddr = " << progHdr.p_paddr << std::endl;
-            std::cout << "    MemSize  = " << progHdr.p_memsz << std::endl;
+            std::cout << "LOAD";
+            std::cout << "    VirtAddr = " << progHdr.p_paddr;
+            std::cout << "    MemSize = " << progHdr.p_memsz;
+            std::cout << std::endl;
+
+            loadedSize += progHdr.p_memsz;
 
             // TODO probably don't need an intermediate copy...
             std::vector<std::byte> sectionData(progHdr.p_filesz);
@@ -74,9 +79,13 @@ void ElfFileLoader::LoadMemory(MemoryMap& mem)
         }
         else
         {
-            std::cout << "(unknown)" << std::endl;
+            std::cout << "(unused)" << std::endl;
         }
     }
+
+    std::cout << std::endl;
+    std::cout << "Loaded " << loadedSize << " B into memory" << std::endl;
+    std::cout << std::endl;
 }
 
 ElfFileLoader::ElfClass ElfFileLoader::GetElfClass() const
