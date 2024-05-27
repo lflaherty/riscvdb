@@ -7,7 +7,8 @@ namespace riscvdb {
 
 SimHost::SimHost()
 : m_state(IDLE),
-  m_mem(DEFAULT_MEM_ORIGIN, DEFAULT_MEM_SIZE)
+  m_mem(DEFAULT_MEM_ORIGIN, DEFAULT_MEM_SIZE),
+  m_processor(m_mem)
 {
     // empty
 }
@@ -36,6 +37,11 @@ MemoryMap& SimHost::Memory()
     return m_mem;
 }
 
+RiscvProcessor& SimHost::Processor()
+{
+    return m_processor;
+}
+
 void SimHost::ResetSim()
 {
     // TODO reset processor
@@ -61,20 +67,19 @@ void SimHost::Pause()
 
 void SimHost::runSimWorker(unsigned long numInstructions)
 {
-    (void)numInstructions;
-    // TODO - temporary worker that runs for 10s
-    unsigned int counter = 0;
+    unsigned long instCounter = 0;
+
     while(m_state == RUNNING)
     {
-        counter++;
-        std::cout << "ping from thread - " << counter << std::endl;
+        instCounter++;
+        m_processor.Step();
 
-        if (counter == 10)
+        if (numInstructions > 0 && instCounter == numInstructions)
         {
-            m_state = TERMINATED;
+            m_state = PAUSED;
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        // TODO check for if breakpoint hit
     }
 }
 

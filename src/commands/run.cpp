@@ -19,8 +19,6 @@ void CmdRun::sigint_handler(int signum)
     std::cout << std::endl;
     std::cout << "user interrupted" << std::endl;
 
-    // TODO print some stats
-
     // this will eventually change the state
     m_simHost.Pause();
   }
@@ -40,6 +38,7 @@ ConsoleCommand::CmdRetType CmdRun::run(std::vector<std::string>& args)
       try
       {
         numInstructions = std::stoul(args[1]);
+        std::cout << "Running " << numInstructions << " instruction(s)" << std::endl;
       }
       catch (std::exception& e)
       {
@@ -76,6 +75,13 @@ ConsoleCommand::CmdRetType CmdRun::run(std::vector<std::string>& args)
   while (m_simHost.GetState() == SimHost::RUNNING)
   {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  if (m_simHost.GetState() == SimHost::PAUSED)
+  {
+    std::cout << "target paused" << std::endl;
+    std::cout << "PC = 0x";
+    std::cout << std::hex << m_simHost.Processor().GetPC() << std::endl;
   }
 
   return CmdRetType_OK;

@@ -78,6 +78,7 @@ void MemoryMap::Get(const AddrType address, std::byte& data_out)
     if (address < m_addrLower || address > m_addrUpper)
     {
         std::stringstream ss;
+        ss << std::hex;
         ss << "address " << address << " is outside of range ";
         ss << "[" << m_addrLower << ", " << m_addrUpper << "]";
         throw std::out_of_range(ss.str());
@@ -95,6 +96,39 @@ void MemoryMap::Get(const AddrType address, std::byte& data_out)
     }
 
     data_out = m_mem[baseAddress].get()->at(offset);
+}
+
+uint32_t MemoryMap::ReadWord(const AddrType address)
+{
+    // the MemoryMap is byte addressed
+    std::array<std::byte, 4> word;
+
+    Get(address + 0, word.at(0));
+    Get(address + 1, word.at(1));
+    Get(address + 2, word.at(2));
+    Get(address + 3, word.at(3));
+
+    uint32_t ret = 0;
+    ret |= static_cast<uint32_t>(word[0]) << 0;
+    ret |= static_cast<uint32_t>(word[1]) << 8;
+    ret |= static_cast<uint32_t>(word[2]) << 16;
+    ret |= static_cast<uint32_t>(word[3]) << 24;
+
+    return ret;
+}
+
+void MemoryMap::WriteWord(const AddrType address, uint32_t data, uint32_t mask)
+{
+    uint32_t original = ReadWord(address);
+    uint32_t new_val = (original & ~mask) | (data & mask);
+
+    std::vector<std::byte> encoding(4);
+    encoding[0] = static_cast<std::byte>((new_val >> 0) & 0xFF);
+    encoding[1] = static_cast<std::byte>((new_val >> 8) & 0xFF);
+    encoding[2] = static_cast<std::byte>((new_val >> 16) & 0xFF);
+    encoding[3] = static_cast<std::byte>((new_val >> 24) & 0xFF);
+
+    Put(address, encoding);
 }
 
 } // namespace riscvdb

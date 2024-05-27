@@ -5,11 +5,12 @@
 #include <array>
 #include <memory>
 #include <unordered_map>
+#include <cctype>
 
 namespace riscvdb
 {
 
-static const unsigned long DEFAULT_BLOCK_SIZE = 1024; // 1 KiB
+static const unsigned long long DEFAULT_BLOCK_SIZE = 1024; // 1 KiB
 
 class MemoryMap {
 public:
@@ -22,6 +23,9 @@ public:
     void Put(const AddrType address, const std::byte& data);
     void Put(const AddrType address, const std::vector<std::byte>& data);
     void Get(const AddrType address, std::byte& data_out);
+
+    uint32_t ReadWord(const AddrType address);
+    void WriteWord(const AddrType address, uint32_t data, uint32_t mask);
 
 private:
     const AddrType m_addrLower;
