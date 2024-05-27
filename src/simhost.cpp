@@ -12,6 +12,14 @@ SimHost::SimHost()
     // empty
 }
 
+SimHost::~SimHost()
+{
+    if (m_simRunner.joinable())
+    {
+        m_simRunner.join();
+    }
+}
+
 int SimHost::LoadFile(FileLoader& loader)
 {
     loader.LoadMemory(m_mem);
@@ -34,7 +42,7 @@ void SimHost::ResetSim()
     m_state = IDLE;
 }
 
-void SimHost::Run()
+void SimHost::Run(unsigned long numInstructions)
 {
     if (m_state == RUNNING)
     {
@@ -42,7 +50,7 @@ void SimHost::Run()
     }
 
     m_state = RUNNING;
-    m_simRunner = std::thread(&SimHost::runSimWorker, this);
+    m_simRunner = std::thread(&SimHost::runSimWorker, this, numInstructions);
 }
 
 void SimHost::Pause()
@@ -51,8 +59,9 @@ void SimHost::Pause()
     m_simRunner.join();
 }
 
-void SimHost::runSimWorker()
+void SimHost::runSimWorker(unsigned long numInstructions)
 {
+    (void)numInstructions;
     // TODO - temporary worker that runs for 10s
     unsigned int counter = 0;
     while(m_state == RUNNING)

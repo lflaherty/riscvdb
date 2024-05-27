@@ -22,6 +22,7 @@ public:
     };
 
     SimHost();
+    ~SimHost();
 
     int LoadFile(FileLoader& loader);
 
@@ -29,7 +30,7 @@ public:
     MemoryMap& Memory();
 
     void ResetSim();
-    void Run();
+    void Run(unsigned long numInstructions = 0);
     void Pause();
 
 private:
@@ -40,7 +41,8 @@ private:
     // the virtual CPU runs in this thread:
     std::thread m_simRunner;
 
-    void runSimWorker();
+    // pass numInstructions=0 to run indefinitely
+    void runSimWorker(unsigned long numInstructions);
 
 };
 
