@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <algorithm>
 #include <iterator>
+#include <functional>
+#include <csignal>
 
 #include "linenoise_wrapper.h"
 
@@ -24,17 +26,99 @@
 
 namespace riscvdb {
 
+/*
+ * *****************************************************************************
+ *
+ * class ConsoleCommand
+ *
+ * *****************************************************************************
+ */
 std::string ConsoleCommand::helpStr() { return std::string(); }
 
 std::string ConsoleCommand::extendedHelpStr() { return std::string(); }
 
+
+/*
+ * *****************************************************************************
+ *
+ * class SigIntHandler
+ *
+ * *****************************************************************************
+ */
+std::deque<SigIntHandler*> SigIntHandler::s_instances;
+
+SigIntHandler::SigIntHandler(std::function<void(int)> handler)
+: m_handler(handler)
+{
+    // register static signal handler?
+    if (s_instances.empty())
+    {
+        struct sigaction sigIntHandler;
+        sigIntHandler.sa_handler = SigIntHandler::static_signalHandler;
+        sigemptyset(&sigIntHandler.sa_mask);
+        sigIntHandler.sa_flags = 0;
+
+        sigaction(SIGINT, &sigIntHandler, NULL);
+    }
+
+    // sign up this command for ctrl-C signal notification
+    s_instances.push_back(this);
+}
+
+SigIntHandler::~SigIntHandler()
+{
+    // unregister when the SigInt context is destroyed
+
+    std::deque<SigIntHandler*>::iterator it;
+    for (it = s_instances.begin(); it != s_instances.end(); it++)
+    {
+        if (*it == this)
+        {
+            s_instances.erase(it);
+            break;
+        }
+    }
+
+    // reset signal handler if no more left
+    if (s_instances.empty())
+    {
+        struct sigaction sigIntHandler;
+        sigIntHandler.sa_handler = nullptr;
+        sigemptyset(&sigIntHandler.sa_mask);
+        sigIntHandler.sa_flags = 0;
+
+        sigaction(SIGINT, &sigIntHandler, NULL);
+    }
+}
+
+void SigIntHandler::signalHandler(int signum)
+{
+    m_handler(signum);
+}
+
+void SigIntHandler::static_signalHandler(int signum)
+{
+    // invoke every class's individual handler
+    std::for_each(s_instances.begin(),
+                  s_instances.end(),
+                  std::bind(std::mem_fn(&SigIntHandler::signalHandler), std::placeholders::_1, signum));
+}
+
+
+/*
+ * *****************************************************************************
+ *
+ * class Console
+ *
+ * *****************************************************************************
+ */
 const std::string Console::CONSOLE_PROMPT = "(riscvdb) ";
 
 Console::Console(SimHost& simHost)
 : m_sim(simHost) {
     addCmd(std::make_shared<CmdHelp>(*this));
     addCmd(std::make_shared<CmdLoad>());
-    addCmd(std::make_shared<CmdRun>());
+    addCmd(std::make_shared<CmdRun>(simHost));
     addCmd(std::make_shared<CmdContinue>());
     addCmd(std::make_shared<CmdBreak>());
     addCmd(std::make_shared<CmdPrint>());
@@ -53,7 +137,7 @@ Console::Console(SimHost& simHost)
     *    register {reg} (or x {reg})
     *    memory {address} {size} (or m {address} {size})
     */
-   (void)m_sim;
+    (void)m_sim;
 
     using namespace linenoise_wrapper;
     Linenoise::setHintAppearance(Linenoise::COLOR_MAGENTA, false);

@@ -13,7 +13,7 @@ static const unsigned long DEFAULT_BLOCK_SIZE = 1024; // 1 KiB
 
 class MemoryMap {
 public:
-    typedef unsigned long AddrType;
+    typedef unsigned long long AddrType;
 
     MemoryMap(const AddrType memAddrStart, const AddrType memSize);
 
