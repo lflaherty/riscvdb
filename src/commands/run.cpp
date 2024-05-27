@@ -28,10 +28,29 @@ void CmdRun::sigint_handler(int signum)
 
 ConsoleCommand::CmdRetType CmdRun::run(std::vector<std::string>& args)
 {
-  if (args.size() != 1)
+  unsigned long numInstructions = 0;
+
+  switch(args.size())
   {
-    std::cerr << "Usage: run" << std::endl;
-    return CmdRetType_ERROR;
+    case 1:
+      // default - run indefinitely
+      break;
+
+    case 2:
+      try
+      {
+        numInstructions = std::stoul(args[1]);
+      }
+      catch (std::exception& e)
+      {
+        std::cerr << "invalid argument " << args[1] << ": " << e.what() << std::endl;
+        return CmdRetType_ERROR;
+      }
+      break;
+
+    default:
+      std::cerr << "Usage: run [number of instructions]" << std::endl;
+      return CmdRetType_ERROR;
   }
 
   if (m_simHost.GetState() == SimHost::RUNNING ||
@@ -43,7 +62,7 @@ ConsoleCommand::CmdRetType CmdRun::run(std::vector<std::string>& args)
 
   try
   {
-    m_simHost.Run();
+    m_simHost.Run(numInstructions);
   }
   catch (std::runtime_error& e)
   {
