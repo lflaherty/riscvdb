@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 #include <cassert>
+#include <deque>
+#include <functional>
 #include "simhost.h"
 
 namespace riscvdb {
@@ -26,6 +28,22 @@ public:
     virtual std::string helpStr();
     virtual std::string extendedHelpStr();
 };
+
+
+class SigIntHandler {
+public:
+    SigIntHandler(std::function<void(int)> handler);
+    ~SigIntHandler();
+
+private:
+    const std::function<void(int)> m_handler;
+
+    // used to handle SIGINTs (so commands can be Ctrl-C'd)
+    void signalHandler(int signum); // individual signal handler
+    static void static_signalHandler(int signum); // actual signal handler
+    static std::deque<SigIntHandler*> s_instances;
+};
+
 
 class Console {
 public:
