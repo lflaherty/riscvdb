@@ -82,6 +82,15 @@ RiscvProcessor::RiscvProcessor(MemoryMap& mem)
     // cmd_mapping_SYSTEM[mask_ecall] =  Instruction(NULL,  &RiscvProcessor::execute_ecall);
 }
 
+void RiscvProcessor::Reset()
+{
+    m_pc = 0;
+    m_instruction_count = 0;
+    std::for_each(m_reg.begin(),
+                  m_reg.end(),
+                  [&](unsigned int& x) mutable { x = 0; });
+}
+
 RiscvProcessor::Register RiscvProcessor::GetPC() const
 {
     return m_pc;

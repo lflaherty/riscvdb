@@ -44,8 +44,14 @@ RiscvProcessor& SimHost::Processor()
 
 void SimHost::ResetSim()
 {
-    // TODO reset processor
     m_state = IDLE;
+    if (m_simRunner.joinable())
+    {
+        m_simRunner.join();
+    }
+
+    m_mem.Clear();
+    m_processor.Reset();
 }
 
 void SimHost::Run(unsigned long numInstructions)

@@ -131,4 +131,9 @@ void MemoryMap::WriteWord(const AddrType address, uint32_t data, uint32_t mask)
     Put(address, encoding);
 }
 
+void MemoryMap::Clear()
+{
+    m_mem.clear();
+}
+
 } // namespace riscvdb

@@ -15,6 +15,8 @@ public:
     typedef uint32_t Register;
     RiscvProcessor(MemoryMap& mem);
 
+    void Reset();
+
     Register GetPC() const;
     void SetPC(const Register newValue);
 
