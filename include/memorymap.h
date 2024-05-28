@@ -27,6 +27,8 @@ public:
     uint32_t ReadWord(const AddrType address);
     void WriteWord(const AddrType address, uint32_t data, uint32_t mask);
 
+    void Clear();
+
 private:
     const AddrType m_addrLower;
     const AddrType m_addrUpper;
