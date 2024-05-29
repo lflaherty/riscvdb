@@ -6,21 +6,33 @@
 namespace riscvdb
 {
 
+// CSR numbers
+const uint32_t RiscvProcessor::csr_mvendorid = 0xF11;
+const uint32_t RiscvProcessor::csr_marchid = 0xF12;
+const uint32_t RiscvProcessor::csr_mimpid = 0xF13;
+const uint32_t RiscvProcessor::csr_mhartid = 0xF14;
+const uint32_t RiscvProcessor::csr_mstatus = 0x300;
+const uint32_t RiscvProcessor::csr_misa = 0x301;
+const uint32_t RiscvProcessor::csr_mie = 0x304;
+const uint32_t RiscvProcessor::csr_mtvec = 0x305;
+const uint32_t RiscvProcessor::csr_mscratch = 0x340;
+const uint32_t RiscvProcessor::csr_mepc = 0x341;
+const uint32_t RiscvProcessor::csr_mcause = 0x342;
+const uint32_t RiscvProcessor::csr_mtval = 0x343;
+const uint32_t RiscvProcessor::csr_mip = 0x344;
+
+// Privilege levels
+const uint8_t RiscvProcessor::PRV_USER = 0;
+const uint8_t RiscvProcessor::PRV_MACHINE = 3;
+
 RiscvProcessor::RiscvProcessor(MemoryMap& mem)
 : m_mem(mem),
   m_pc(0),
-  m_instruction_count(0)
+  m_instruction_count(0),
+  m_prv(PRV_MACHINE)
 {
-    // Initialize all registers to zero
-    std::for_each(m_reg.begin(),
-                  m_reg.end(),
-                  [&](unsigned int& x) mutable { x = 0; });
-
-    // Initialize csr registers
-    // TODO
-
-    // Initialize privilege level
-    // TODO
+    // initialize all values to default:
+    Reset();
 
     // Setup lookup tables
     // R types
@@ -61,13 +73,12 @@ RiscvProcessor::RiscvProcessor(MemoryMap& mem)
     cmd_mapping_ISB[mask_slli] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_slli);
     cmd_mapping_ISB[mask_srli] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_srli);
     cmd_mapping_ISB[mask_srai] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_srai);
-    // TODO add CSR instructions:
-    // cmd_mapping_ISB[mask_csrrw] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrw);
-    // cmd_mapping_ISB[mask_csrrs] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrs);
-    // cmd_mapping_ISB[mask_csrrc] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrc);
-    // cmd_mapping_ISB[mask_csrrwi] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrwi);
-    // cmd_mapping_ISB[mask_csrrsi] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrsi);
-    // cmd_mapping_ISB[mask_csrrci] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrci);
+    cmd_mapping_ISB[mask_csrrw] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrw);
+    cmd_mapping_ISB[mask_csrrs] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrs);
+    cmd_mapping_ISB[mask_csrrc] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrc);
+    cmd_mapping_ISB[mask_csrrwi] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrwi);
+    cmd_mapping_ISB[mask_csrrsi] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrsi);
+    cmd_mapping_ISB[mask_csrrci] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrci);
 
     // U/J types
     cmd_mapping_UJ[mask_lui] =   Instruction(&RiscvProcessor::decode_U,  &RiscvProcessor::execute_lui);
@@ -75,20 +86,39 @@ RiscvProcessor::RiscvProcessor(MemoryMap& mem)
     cmd_mapping_UJ[mask_jal] =   Instruction(&RiscvProcessor::decode_J,  &RiscvProcessor::execute_jal);
 
     // SYSTEM types
-    // TODO
-    // cmd_mapping_SYSTEM[mask_fence] =  Instruction(NULL,  NULL);
-    // cmd_mapping_SYSTEM[mask_mret] =   Instruction(NULL,  &RiscvProcessor::execute_mret);
-    // cmd_mapping_SYSTEM[mask_ebreak] = Instruction(NULL,  &RiscvProcessor::execute_ebreak);
-    // cmd_mapping_SYSTEM[mask_ecall] =  Instruction(NULL,  &RiscvProcessor::execute_ecall);
+    cmd_mapping_SYSTEM[mask_fence] =  Instruction(nullptr,  nullptr);
+    cmd_mapping_SYSTEM[mask_mret] =   Instruction(nullptr,  &RiscvProcessor::execute_mret);
+    cmd_mapping_SYSTEM[mask_ebreak] = Instruction(nullptr,  &RiscvProcessor::execute_ebreak);
+    cmd_mapping_SYSTEM[mask_ecall] =  Instruction(nullptr,  &RiscvProcessor::execute_ecall);
 }
 
 void RiscvProcessor::Reset()
 {
     m_pc = 0;
     m_instruction_count = 0;
+
+    // Reset all registers to zero
     std::for_each(m_reg.begin(),
                   m_reg.end(),
                   [&](unsigned int& x) mutable { x = 0; });
+
+    // Reset privilege level
+    m_prv = PRV_MACHINE;
+
+    // Reset csr registers
+    m_csr_table[csr_mvendorid] = 0;
+    m_csr_table[csr_marchid] = 0;
+    m_csr_table[csr_mimpid] = 0x20190200;
+    m_csr_table[csr_mhartid] = 0;
+    m_csr_table[csr_mstatus] = 0;
+    m_csr_table[csr_misa] = 0x40100100;
+    m_csr_table[csr_mie] = 0;
+    m_csr_table[csr_mtvec] = 0;
+    m_csr_table[csr_mscratch] = 0;
+    m_csr_table[csr_mepc] = 0;
+    m_csr_table[csr_mcause] = 0;
+    m_csr_table[csr_mtval] = 0;
+    m_csr_table[csr_mip] = 0;
 }
 
 RiscvProcessor::Register RiscvProcessor::GetPC() const
@@ -130,6 +160,134 @@ unsigned long RiscvProcessor::GetInstructionCount() const
     return m_instruction_count;
 }
 
+void RiscvProcessor::SetPrivilegeLevel(const uint8_t prv)
+{
+    m_prv = prv;
+}
+
+uint32_t RiscvProcessor::GetCSRValue(const uint32_t csr_num) const
+{
+    uint32_t val = 0;
+
+    switch (csr_num) {
+        // Only allow valid CSR values
+        case csr_mvendorid:
+        case csr_marchid:
+        case csr_mimpid:
+        case csr_mhartid:
+        case csr_mstatus:
+        case csr_misa:
+        case csr_mie:
+        case csr_mtvec:
+        case csr_mscratch:
+        case csr_mepc:
+        case csr_mcause:
+        case csr_mtval:
+        case csr_mip:
+            val = m_csr_table.at(csr_num);
+
+        default:
+            {
+                std::stringstream ss;
+                ss << "csr number " << csr_num << " is invalid";
+                throw std::invalid_argument(ss.str());
+            }
+    }
+
+    return val;
+}
+
+RiscvProcessor::set_csr_result RiscvProcessor::SetCSRValue(const uint32_t csr_num, const uint32_t new_value)
+{
+    set_csr_result ret;
+    ret.set_csr_user_mode = m_prv == PRV_USER;
+
+    // Differnet csr numbers have different methods of update:
+    switch (csr_num) {
+        case csr_mvendorid:
+        case csr_marchid:
+        case csr_mimpid:
+        case csr_mhartid:
+            // Fixed values (illegal)
+            ret.set_csr_read_only = true;
+            break;
+
+        case csr_misa:
+            // Fixed values (not illegal)
+            ret.set_csr_read_only = true;
+            break;
+
+        case csr_mstatus:
+            // mask to only allow:
+            //  mpp  12:11
+            //  mpie  7
+            //  mie   3
+            m_csr_table[csr_num] = new_value & 0x1888;
+            break;
+
+        case csr_mie:
+            // mask to only allow:
+            //  meie  11 
+            //  ueie  8
+            //  mtie  7
+            //  utie  4
+            //  msie  3
+            //  usie  0
+            m_csr_table[csr_num] = new_value & 0x999;
+            break;
+
+        case csr_mtvec:
+            if ((new_value & 0x1) == 1)
+            {
+                // fix bits 1 to 6 to 0
+                m_csr_table[csr_num] = new_value & 0xFFFFFF81;
+            }
+            else
+            {
+                // fix bit 1 to 0
+                m_csr_table[csr_num] = new_value & 0xFFFFFFFD;
+            }
+            break;
+
+        case csr_mepc:
+            // Bits 0 and 1 fixed to 0
+            m_csr_table[csr_num] = new_value & 0xFFFFFFFC;
+            break;
+
+        case csr_mcause:
+            // Only interrupt bit and 4-bit exception code field implemented
+            //   interrupt bit    31
+            //   4-bit exception  0:3
+            m_csr_table[csr_num] = new_value & 0x8000000F;
+            break;
+
+        case csr_mip:
+            // only the follwing bits set:
+            //  meip  11  R
+            //  ueip  8   RW
+            //  mtip  7   R
+            //  utip  4   RW
+            //  msip  3   R
+            //  usip  0   RW
+            // Can only write to R/W fields
+            m_csr_table[csr_num] = (m_csr_table[csr_num] & ~0x111) | (new_value & 0x111);
+            break;
+
+        // All other CSR values
+        case csr_mscratch:
+        case csr_mtval:
+            // No specific rule applies
+            m_csr_table[csr_num] = new_value;
+            break;
+
+        default:
+            // Invalid number
+            ret.set_csr_undefined_num = true;
+    }
+
+    return ret;
+}
+
 void RiscvProcessor::Step()
 {
     // Fetch command at PC
@@ -158,7 +316,67 @@ void RiscvProcessor::ExecuteCmd(const uint32_t cmd)
     }
 
     // Load bits for interrupts
-    // TODO CSR
+  uint32_t mip = m_csr_table[csr_mip];
+  uint32_t mip_usip = (mip >> 0) & 0x1;
+  uint32_t mip_msip = (mip >> 3) & 0x1;
+  uint32_t mip_utip = (mip >> 4) & 0x1;
+  uint32_t mip_mtip = (mip >> 7) & 0x1;
+  uint32_t mip_ueip = (mip >> 8) & 0x1;
+  uint32_t mip_meip = (mip >> 11) & 0x1;
+
+  uint32_t mie = m_csr_table[csr_mie];
+  uint32_t mie_usie = (mie >> 0) & 0x1;
+  uint32_t mie_msie = (mie >> 3) & 0x1;
+  uint32_t mie_utie = (mie >> 4) & 0x1;
+  uint32_t mie_mtie = (mie >> 7) & 0x1;
+  uint32_t mie_ueie = (mie >> 8) & 0x1;
+  uint32_t mie_meie = (mie >> 11) & 0x1;
+
+  uint32_t mstatus_mie = (m_csr_table[csr_mstatus] >> 3) & 0x1;
+
+  // Trigger interrupts
+  // Machine external interrupt:
+  if (mip_meip && mie_meie && ((mstatus_mie && m_prv == PRV_MACHINE) || (~mstatus_mie && m_prv == PRV_USER))) {
+    RaiseException(ex_machine_external_interrupt);
+    m_pc += 4;
+    m_instruction_count++;
+    return;
+  }
+  // Machine software interrupt:
+  if (mip_msip && mie_msie && ((mstatus_mie && m_prv == PRV_MACHINE) || (~mstatus_mie && m_prv == PRV_USER))) {
+    RaiseException(ex_machine_software_interrupt);
+    m_pc += 4;
+    m_instruction_count++;
+    return;
+  }
+  // Machine timer interrupt
+  if (mip_mtip && mie_mtie && ((mstatus_mie && m_prv == PRV_MACHINE) || (~mstatus_mie && m_prv == PRV_USER))) {
+    RaiseException(ex_machine_timer_interrupt);
+    m_pc += 4;
+    m_instruction_count++;
+    return;
+  }
+  // User external interrupt
+  if (mip_ueip && mie_ueie && ((mstatus_mie && m_prv == PRV_MACHINE) || (~mstatus_mie && m_prv == PRV_USER))) {
+    RaiseException(ex_user_external_interrupt);
+    m_pc += 4;
+    m_instruction_count++;
+    return;
+  }
+  // User software interrupt:
+  if (mip_usip && mie_usie && ((mstatus_mie && m_prv == PRV_MACHINE) || (~mstatus_mie && m_prv == PRV_USER))) {
+    RaiseException(ex_user_software_interrupt);
+    m_pc += 4;
+    m_instruction_count++;
+    return;
+  }
+  // User timer interrupt:
+  if (mip_utip && mie_utie && ((mstatus_mie && m_prv == PRV_MACHINE) || (~mstatus_mie && m_prv == PRV_USER))) {
+    RaiseException(ex_user_timer_interrupt);
+    m_pc += 4;
+    m_instruction_count++;
+    return;
+  }
 
     // Get and run the instruction decoder and executor
     bool instructionFound = false;
@@ -193,12 +411,12 @@ void RiscvProcessor::ExecuteCmd(const uint32_t cmd)
     // Finally... decode the instruction and execute
     if (instructionFound)
     {
-        if (decoder != NULL)
+        if (decoder != nullptr)
         {
             (this->*decoder)(cmd);
         }
 
-        if (executor != NULL)
+        if (executor != nullptr)
         {
             (this->*executor)();
         }
@@ -216,9 +434,64 @@ void RiscvProcessor::ExecuteCmd(const uint32_t cmd)
 // Exception handling ----------------------------------------------------------
 void RiscvProcessor::RaiseException(const RiscvProcessor::ExceptionReg& exception_data)
 {
-    // TODO
-    throw std::runtime_error("RaiseException not implemented");
-    (void)exception_data;
+    // this didn't count as an instruction
+    m_instruction_count--;
+
+    // Set mcause
+    uint32_t mcause = 0;
+    mcause |= exception_data.interrupt << 31;
+    mcause |= exception_data.exceptionCode & 0xF;
+    SetCSRValue(csr_mcause, mcause);
+
+    // Set mepc
+    SetCSRValue(csr_mepc, m_pc);
+
+    // Set mtval
+    if (&exception_data == &ex_illegal_instruction)
+    {
+        // Store the instruction
+        SetCSRValue(csr_mtval, m_mem.ReadWord(m_pc));
+    }
+    else if (&exception_data == &ex_instruction_address_misaligned)
+    {
+        // Store instr address
+        SetCSRValue(csr_mtval, m_pc);
+    }
+    else if (&exception_data == &ex_load_address_misaligned ||
+             &exception_data == &ex_store_address_misaligned)
+    {
+        // Store mem address
+        SetCSRValue(csr_mtval, m_reg[m_decoded_rs1] + m_decoded_imm);
+    }
+    else
+    {
+        // Other instructions - set to 0
+        SetCSRValue(csr_mtval, 0);
+    }
+
+    // Push interrupt enable stack (ie)
+    uint32_t mstatus;
+
+    mstatus = m_csr_table[csr_mstatus];
+    uint32_t mie = (mstatus >> 3) & 0x1;
+    mstatus = (mstatus & ~(0x1 << 3)) | 0 << 3; 
+    mstatus = (mstatus & ~(0x1 << 7)) | mie << 7; 
+    SetCSRValue(csr_mstatus, mstatus);
+
+    // Push privilege level stack (mpp) (copy prv to mstatus and to go machine prv)
+    mstatus = m_csr_table[csr_mstatus];
+    mstatus = (mstatus & ~(0x3 << 11)) | m_prv << 11; // replace bits 12:11 with privilege level
+    SetCSRValue(csr_mstatus, mstatus);
+    SetPrivilegeLevel(PRV_MACHINE);
+
+    // transfer to mtvec base
+    uint32_t base = m_csr_table[csr_mtvec] & 0xFFFFFFFC;
+    uint32_t mode = m_csr_table[csr_mtvec] & 0x1;
+    // in vectored mode, need to add 4*cause
+    if (mode == 1 && exception_data.interrupt == 1) {
+        base += 4 * m_csr_table[csr_mcause];
+    }
+    m_pc = base - 4;
 }
 
 
@@ -688,6 +961,237 @@ void RiscvProcessor::execute_or() {
 
 void RiscvProcessor::execute_and() {
   SetReg(m_decoded_rd, m_reg[m_decoded_rs1] & m_reg[m_decoded_rs2]);
+}
+
+// Privilege handling ----------------------------------------------------------
+void RiscvProcessor::execute_ebreak() {
+  RaiseException(ex_breakpoint);
+}
+
+void RiscvProcessor::execute_mret() {
+  // Exception: User mode
+  if (m_prv == PRV_USER) {
+    RaiseException(ex_illegal_instruction);
+    return;
+  }
+
+
+  // Recover exception
+  m_pc = m_csr_table[csr_mepc] - 4;
+
+  // Read mstatus
+  uint32_t mstatus = m_csr_table[csr_mstatus];
+  uint32_t mpp = (mstatus >> 11) & 0x3;
+  uint32_t mpie = (mstatus >> 7) & 0x1;
+  uint32_t mie = (mstatus >> 3) & 0x1;
+
+  // change prv to MPP
+  SetPrivilegeLevel(mpp);
+
+  // MIE set to MPIE, MPIE set to 1, MPP set to U
+  mie = mpie;
+  mpie = 1;
+  mpp = PRV_USER;
+  mstatus = 0;
+  mstatus |= (mpp & 0x3) << 11;
+  mstatus |= (mpie & 0x1) << 7;
+  mstatus |= (mie & 0x1) << 3;
+  SetCSRValue(csr_mstatus, mstatus);
+}
+
+void RiscvProcessor::execute_ecall() {
+  // Exception checking
+  if (m_prv == PRV_USER) {
+    RaiseException(ex_environment_call_from_Umode);
+  } else if (m_prv == PRV_MACHINE) {
+    RaiseException(ex_environment_call_from_Mmode);
+  }
+}
+
+
+// CSR instruction handling ----------------------------------------------------
+void RiscvProcessor::execute_csrrw() {
+  uint32_t csr_num = m_decoded_imm & 0xFFF;  // remove sign extension
+
+  // Read values
+  uint32_t csr_val = m_csr_table[csr_num];
+  uint32_t reg_rs1 = m_reg[m_decoded_rs1];
+  uint32_t reg_rd = m_reg[m_decoded_rd];
+
+  // Write values
+  set_csr_result ret = SetCSRValue(csr_num, reg_rs1);
+  SetReg(m_decoded_rd, csr_val);
+
+  // Illegal instruction Exception check
+  if (ret.set_csr_read_only || ret.set_csr_undefined_num || ret.set_csr_user_mode) {
+    // Undo work
+    SetReg(m_decoded_rd, reg_rd);
+    if (ret.set_csr_user_mode)   // also undo set_csr if in user mode
+      SetCSRValue(csr_num, csr_val);
+
+    // Raise expcetion
+    RaiseException(ex_illegal_instruction);
+    return;
+  }
+}
+
+void RiscvProcessor::execute_csrrs() {
+  uint32_t csr_num = m_decoded_imm & 0xFFF;  // remove sign extension
+
+  // Read values
+  uint32_t csr_val = m_csr_table[csr_num];
+  uint32_t reg_rs1 = m_reg[m_decoded_rs1];
+  uint32_t reg_rd = m_reg[m_decoded_rd];
+
+  // Write reg
+  SetReg(m_decoded_rd, csr_val);
+
+  // Set bits in reg
+  uint32_t csr_val_new = csr_val | reg_rs1;
+
+  set_csr_result ret;
+  if (m_decoded_rs1 != 0)
+    ret = SetCSRValue(csr_num, csr_val_new);
+
+
+  // Illegal instruction Exception check
+  if (ret.set_csr_read_only || ret.set_csr_undefined_num || ret.set_csr_user_mode) {
+    // Undo work
+    SetReg(m_decoded_rd, reg_rd);
+    if (ret.set_csr_user_mode)   // also undo set_csr if in user mode
+      SetCSRValue(csr_num, csr_val);
+
+    // Raise expcetion
+    RaiseException(ex_illegal_instruction);
+    return;
+  }
+}
+
+void RiscvProcessor::execute_csrrc() {
+  uint32_t csr_num = m_decoded_imm & 0xFFF;  // remove sign extension
+
+  // Read values
+  uint32_t csr_val = m_csr_table[csr_num];
+  uint32_t reg_rs1 = m_reg[m_decoded_rs1];
+  uint32_t reg_rd = m_reg[m_decoded_rd];
+
+  // Write reg
+  SetReg(m_decoded_rd, csr_val);
+
+  // Set bits in reg
+  uint32_t csr_val_new = csr_val & ~reg_rs1;
+  
+  set_csr_result ret;
+  if (m_decoded_rs1 != 0)
+    ret = SetCSRValue(csr_num, csr_val_new);
+
+
+  // Illegal instruction Exception check
+  if (ret.set_csr_read_only || ret.set_csr_undefined_num || ret.set_csr_user_mode) {
+    // Undo work
+    SetReg(m_decoded_rd, reg_rd);
+    if (ret.set_csr_user_mode)   // also undo set_csr if in user mode
+      SetCSRValue(csr_num, csr_val);
+
+    // Raise expcetion
+    RaiseException(ex_illegal_instruction);
+    return;
+  }
+}
+
+void RiscvProcessor::execute_csrrwi() {
+  uint32_t csr_num = m_decoded_imm & 0xFFF;  // remove sign extension
+
+  // Read values
+  uint32_t csr_val = m_csr_table[csr_num];
+  uint32_t reg_rd = m_reg[m_decoded_rd];
+
+  // Write values
+  set_csr_result ret = SetCSRValue(csr_num, m_decoded_rs1);
+  SetReg(m_decoded_rd, csr_val);
+
+
+  // Illegal instruction Exception check
+  if (ret.set_csr_read_only || ret.set_csr_undefined_num || ret.set_csr_user_mode) {
+    // Undo work
+    SetReg(m_decoded_rd, reg_rd);
+    if (ret.set_csr_user_mode)   // also undo set_csr if in user mode
+      SetCSRValue(csr_num, csr_val);
+
+    // Raise expcetion
+    RaiseException(ex_illegal_instruction);
+    return;
+  }
+}
+
+void RiscvProcessor::execute_csrrsi() {
+  uint32_t csr_num = m_decoded_imm & 0xFFF;  // remove sign extension
+
+  // Read values
+  uint32_t csr_val = m_csr_table[csr_num];
+  uint32_t reg_rd = m_reg[m_decoded_rd];
+
+  // Write reg
+  SetReg(m_decoded_rd, csr_val);
+
+  // Set bits in reg
+  uint32_t csr_val_new = csr_val | m_decoded_rs1;
+
+  set_csr_result ret;
+  if (m_decoded_rs1 != 0)
+    ret = SetCSRValue(csr_num, csr_val_new);
+
+
+  // Illegal instruction Exception check
+  if (ret.set_csr_read_only || ret.set_csr_undefined_num || ret.set_csr_user_mode) {
+    // Undo work
+    SetReg(m_decoded_rd, reg_rd);
+    if (ret.set_csr_user_mode)
+    {
+      // also undo set_csr if in user mode
+      SetCSRValue(csr_num, csr_val);
+    }
+
+    // Raise expcetion
+    RaiseException(ex_illegal_instruction);
+    return;
+  }
+}
+
+void RiscvProcessor::execute_csrrci() {
+  uint32_t csr_num = m_decoded_imm & 0xFFF;  // remove sign extension
+
+  // Read values
+  uint32_t csr_val = m_csr_table[csr_num];
+  uint32_t reg_rd = m_reg[m_decoded_rd];
+
+  // Write reg
+  SetReg(m_decoded_rd, csr_val);
+
+  // Set bits in reg
+  uint32_t csr_val_new = csr_val & ~m_decoded_rs1;
+
+  set_csr_result ret;
+  if (m_decoded_rs1 != 0)
+  {
+    ret = SetCSRValue(csr_num, csr_val_new);
+  }
+
+
+  // Illegal instruction Exception check
+  if (ret.set_csr_read_only || ret.set_csr_undefined_num || ret.set_csr_user_mode) {
+    // Undo work
+    SetReg(m_decoded_rd, reg_rd);
+    if (ret.set_csr_user_mode)
+    {
+      // also undo set_csr if in user mode
+      SetCSRValue(csr_num, csr_val);
+    }
+
+    // Raise expcetion
+    RaiseException(ex_illegal_instruction);
+    return;
+  }
 }
 
 } // namespace riscvdb

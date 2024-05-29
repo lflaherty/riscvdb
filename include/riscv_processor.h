@@ -25,12 +25,38 @@ public:
 
     unsigned long GetInstructionCount() const;
 
+    // Privilege levels
+    static const uint8_t PRV_USER;
+    static const uint8_t PRV_MACHINE;
+    void SetPrivilegeLevel(const uint8_t prv);
+
+    struct set_csr_result{
+        bool set_csr_undefined_num = false;
+        bool set_csr_read_only = false;
+        bool set_csr_user_mode = false;
+    };
+
+    static const uint32_t csr_mvendorid;
+    static const uint32_t csr_marchid;
+    static const uint32_t csr_mimpid;
+    static const uint32_t csr_mhartid;
+    static const uint32_t csr_mstatus;
+    static const uint32_t csr_misa;
+    static const uint32_t csr_mie;
+    static const uint32_t csr_mtvec;
+    static const uint32_t csr_mscratch;
+    static const uint32_t csr_mepc;
+    static const uint32_t csr_mcause;
+    static const uint32_t csr_mtval;
+    static const uint32_t csr_mip;
+
+    uint32_t GetCSRValue(const uint32_t csr_num) const;
+    set_csr_result SetCSRValue(const uint32_t csr_num, const uint32_t new_value);
+
     // Run next instruction
     void Step();
 
     // TODO breakpoints
-
-    // TODO Privilege levels
 
 private:
     // Basic machine data
@@ -44,14 +70,14 @@ private:
     // Breakpoints
     // TODO
 
-    // Machine mode control & status registers (CSRs)
-    // TODO
+    // Machine mode control and status registers (CSRs)
+    std::unordered_map<uint32_t, uint32_t> m_csr_table;
 
     // Exceptions
-    struct ExceptionReg{
+    struct ExceptionReg {
         uint32_t interrupt;
         uint32_t exceptionCode;
-    } ;
+    };
     const ExceptionReg ex_user_software_interrupt          = {1, 0};
     const ExceptionReg ex_machine_software_interrupt       = {1, 3};
     const ExceptionReg ex_user_timer_interrupt             = {1, 4};
@@ -69,7 +95,7 @@ private:
     void RaiseException(const ExceptionReg& exception_data);
 
     // Privilege level
-    // TODO
+    uint8_t m_prv;
 
     // Instruction implementation: 
     // Templates for instruction decoding
