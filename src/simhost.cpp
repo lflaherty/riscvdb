@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <filesystem>
 
 namespace riscvdb {
 
@@ -21,8 +22,45 @@ SimHost::~SimHost()
     }
 }
 
+int SimHost::LoadFile(const std::string& pathStr)
+{
+    std::filesystem::path path(pathStr);
+
+    if (!std::filesystem::exists(path))
+    {
+        std::cerr << "File " << pathStr << " does not exist" << std::endl;
+        return -1;
+    }
+
+    std::cout << "Loading executable " << pathStr << std::endl;
+
+    std::string ext = path.extension();
+    try
+    {
+        if (ext == riscvdb::ElfFileLoader::EXT) {
+            riscvdb::ElfFileLoader elfFileLoader(pathStr);
+            LoadFile(elfFileLoader);
+        } else if (ext == std::string(".bin")) {
+            std::cerr << "raw binaries not yet supported" << std::endl;
+            return -1;
+        } else {
+            std::cerr << "unexpected filetype " << ext << std::endl;
+            return -1;
+        }
+    }
+    catch (std::runtime_error& err)
+    {
+        std::cerr << "failed to load file" << std::endl;
+        std::cerr << err.what() << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
 int SimHost::LoadFile(FileLoader& loader)
 {
+    m_loadedBin = loader.PathStr();  // make a copy for if we need to reload
     loader.LoadMemory(m_mem);
     return 0;
 }
@@ -52,6 +90,10 @@ void SimHost::ResetSim()
 
     m_mem.Clear();
     m_processor.Reset();
+
+    // now that memory is cleared, reload original ELF back in
+    std::cout << "reloading binary" << std::endl;
+    LoadFile(m_loadedBin);
 }
 
 void SimHost::Run(unsigned long numInstructions)

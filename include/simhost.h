@@ -25,6 +25,7 @@ public:
     SimHost();
     ~SimHost();
 
+    int LoadFile(const std::string& path);
     int LoadFile(FileLoader& loader);
 
     SimState GetState() const;
@@ -38,6 +39,8 @@ public:
     void SetVerbose(bool verbose);
 
 private:
+    std::string m_loadedBin;
+
     std::atomic<SimState> m_state;
 
     MemoryMap m_mem;

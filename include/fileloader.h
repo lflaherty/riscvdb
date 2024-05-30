@@ -11,11 +11,15 @@ namespace riscvdb
 
 class FileLoader {
 public:
+    FileLoader(const std::string& pathStr);
     virtual void LoadMemory(MemoryMap& mem) = 0;
+
+    const std::string& PathStr() const;
 
 protected:
     void LoadFile(const std::string& path);
 
+    const std::string& m_pathStr;
     std::vector<std::byte> m_filebytes;
 };
 
