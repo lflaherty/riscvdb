@@ -8,5 +8,6 @@ target_sources(riscvdb PRIVATE
     print.cpp
     memory.cpp
     next.cpp
+    verbose.cpp
     quit.cpp
 )

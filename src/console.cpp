@@ -22,6 +22,7 @@
 #include "commands/print.h"
 #include "commands/memory.h"
 #include "commands/next.h"
+#include "commands/verbose.h"
 #include "commands/quit.h"
 
 namespace riscvdb {
@@ -124,6 +125,7 @@ Console::Console(SimHost& simHost)
     addCmd(std::make_shared<CmdPrint>());
     addCmd(std::make_shared<CmdMemory>(simHost.Memory()));
     addCmd(std::make_shared<CmdNext>());
+    addCmd(std::make_shared<CmdVerbose>(simHost));
     addCmd(std::make_shared<CmdQuit>());
     /*
     * TODO commands to add:

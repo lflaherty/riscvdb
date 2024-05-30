@@ -30,6 +30,7 @@ RiscvProcessor::RiscvProcessor(MemoryMap& mem)
 : m_mem(mem),
   m_pc(0),
   m_instruction_count(0),
+  m_verbose(false),
   m_prv(PRV_MACHINE)
 {
     // initialize all values to default:
@@ -37,60 +38,64 @@ RiscvProcessor::RiscvProcessor(MemoryMap& mem)
 
     // Setup lookup tables
     // R types
-    cmd_mapping_R[mask_add] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_add);
-    cmd_mapping_R[mask_add] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_add);
-    cmd_mapping_R[mask_sub] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_sub);
-    cmd_mapping_R[mask_sll] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_sll);
-    cmd_mapping_R[mask_slt] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_slt);
-    cmd_mapping_R[mask_sltu] =  Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_sltu);
-    cmd_mapping_R[mask_xor] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_xor);
-    cmd_mapping_R[mask_srl] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_srl);
-    cmd_mapping_R[mask_sra] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_sra);
-    cmd_mapping_R[mask_or] =    Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_or);
-    cmd_mapping_R[mask_and] =   Instruction(&RiscvProcessor::decode_R,  &RiscvProcessor::execute_and);
+    cmd_mapping_R[mask_add] =   Instruction("add", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_add);
+    cmd_mapping_R[mask_sub] =   Instruction("sub", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_sub);
+    cmd_mapping_R[mask_sll] =   Instruction("sll", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_sll);
+    cmd_mapping_R[mask_slt] =   Instruction("slt", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_slt);
+    cmd_mapping_R[mask_sltu] =  Instruction("sltu", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_sltu);
+    cmd_mapping_R[mask_xor] =   Instruction("xor", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_xor);
+    cmd_mapping_R[mask_srl] =   Instruction("srl", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_srl);
+    cmd_mapping_R[mask_sra] =   Instruction("sra", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_sra);
+    cmd_mapping_R[mask_or] =    Instruction("or", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_or);
+    cmd_mapping_R[mask_and] =   Instruction("and", &RiscvProcessor::decode_R,  &RiscvProcessor::execute_and);
 
     // I/S/B types
-    cmd_mapping_ISB[mask_jalr] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_jalr);
-    cmd_mapping_ISB[mask_beq] =   Instruction(&RiscvProcessor::decode_B,  &RiscvProcessor::execute_beq);
-    cmd_mapping_ISB[mask_bne] =   Instruction(&RiscvProcessor::decode_B,  &RiscvProcessor::execute_bne);
-    cmd_mapping_ISB[mask_blt] =   Instruction(&RiscvProcessor::decode_B,  &RiscvProcessor::execute_blt);
-    cmd_mapping_ISB[mask_bge] =   Instruction(&RiscvProcessor::decode_B,  &RiscvProcessor::execute_bge);
-    cmd_mapping_ISB[mask_bltu] =  Instruction(&RiscvProcessor::decode_B,  &RiscvProcessor::execute_bltu);
-    cmd_mapping_ISB[mask_bgeu] =  Instruction(&RiscvProcessor::decode_B,  &RiscvProcessor::execute_bgeu);
-    cmd_mapping_ISB[mask_lb] =    Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_lb);
-    cmd_mapping_ISB[mask_lh] =    Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_lh);
-    cmd_mapping_ISB[mask_lw] =    Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_lw);
-    cmd_mapping_ISB[mask_lbu] =   Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_lbu);
-    cmd_mapping_ISB[mask_lhu] =   Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_lhu);
-    cmd_mapping_ISB[mask_sb] =    Instruction(&RiscvProcessor::decode_S,  &RiscvProcessor::execute_sb);
-    cmd_mapping_ISB[mask_sh] =    Instruction(&RiscvProcessor::decode_S,  &RiscvProcessor::execute_sh);
-    cmd_mapping_ISB[mask_sw] =    Instruction(&RiscvProcessor::decode_S,  &RiscvProcessor::execute_sw);
-    cmd_mapping_ISB[mask_addi] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_addi);
-    cmd_mapping_ISB[mask_slti] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_slti);
-    cmd_mapping_ISB[mask_sltiu] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_sltiu);
-    cmd_mapping_ISB[mask_xori] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_xori);
-    cmd_mapping_ISB[mask_ori] =   Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_ori);
-    cmd_mapping_ISB[mask_andi] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_andi);
-    cmd_mapping_ISB[mask_slli] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_slli);
-    cmd_mapping_ISB[mask_srli] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_srli);
-    cmd_mapping_ISB[mask_srai] =  Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_srai);
-    cmd_mapping_ISB[mask_csrrw] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrw);
-    cmd_mapping_ISB[mask_csrrs] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrs);
-    cmd_mapping_ISB[mask_csrrc] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrc);
-    cmd_mapping_ISB[mask_csrrwi] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrwi);
-    cmd_mapping_ISB[mask_csrrsi] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrsi);
-    cmd_mapping_ISB[mask_csrrci] = Instruction(&RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrci);
+    cmd_mapping_ISB[mask_jalr] =  Instruction("jalr", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_jalr);
+    cmd_mapping_ISB[mask_beq] =   Instruction("beq", &RiscvProcessor::decode_B,  &RiscvProcessor::execute_beq);
+    cmd_mapping_ISB[mask_bne] =   Instruction("bne", &RiscvProcessor::decode_B,  &RiscvProcessor::execute_bne);
+    cmd_mapping_ISB[mask_blt] =   Instruction("blt", &RiscvProcessor::decode_B,  &RiscvProcessor::execute_blt);
+    cmd_mapping_ISB[mask_bge] =   Instruction("bge", &RiscvProcessor::decode_B,  &RiscvProcessor::execute_bge);
+    cmd_mapping_ISB[mask_bltu] =  Instruction("bltu", &RiscvProcessor::decode_B,  &RiscvProcessor::execute_bltu);
+    cmd_mapping_ISB[mask_bgeu] =  Instruction("bgeu", &RiscvProcessor::decode_B,  &RiscvProcessor::execute_bgeu);
+    cmd_mapping_ISB[mask_lb] =    Instruction("lb", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_lb);
+    cmd_mapping_ISB[mask_lh] =    Instruction("lh", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_lh);
+    cmd_mapping_ISB[mask_lw] =    Instruction("lw", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_lw);
+    cmd_mapping_ISB[mask_lbu] =   Instruction("lbu", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_lbu);
+    cmd_mapping_ISB[mask_lhu] =   Instruction("lhu", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_lhu);
+    cmd_mapping_ISB[mask_sb] =    Instruction("sb", &RiscvProcessor::decode_S,  &RiscvProcessor::execute_sb);
+    cmd_mapping_ISB[mask_sh] =    Instruction("sh", &RiscvProcessor::decode_S,  &RiscvProcessor::execute_sh);
+    cmd_mapping_ISB[mask_sw] =    Instruction("sw", &RiscvProcessor::decode_S,  &RiscvProcessor::execute_sw);
+    cmd_mapping_ISB[mask_addi] =  Instruction("addi", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_addi);
+    cmd_mapping_ISB[mask_slti] =  Instruction("slti", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_slti);
+    cmd_mapping_ISB[mask_sltiu] = Instruction("sltiu", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_sltiu);
+    cmd_mapping_ISB[mask_xori] =  Instruction("xori", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_xori);
+    cmd_mapping_ISB[mask_ori] =   Instruction("ori", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_ori);
+    cmd_mapping_ISB[mask_andi] =  Instruction("andi", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_andi);
+    cmd_mapping_ISB[mask_slli] =  Instruction("slli", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_slli);
+    cmd_mapping_ISB[mask_srli] =  Instruction("srli", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_srli);
+    cmd_mapping_ISB[mask_srai] =  Instruction("srai", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_srai);
+    cmd_mapping_ISB[mask_csrrw] = Instruction("csrrw", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrw);
+    cmd_mapping_ISB[mask_csrrs] = Instruction("csrrs", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrs);
+    cmd_mapping_ISB[mask_csrrc] = Instruction("csrrc", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrc);
+    cmd_mapping_ISB[mask_csrrwi] = Instruction("csrrwi", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrwi);
+    cmd_mapping_ISB[mask_csrrsi] = Instruction("csrrsi", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrsi);
+    cmd_mapping_ISB[mask_csrrci] = Instruction("csrrci", &RiscvProcessor::decode_I,  &RiscvProcessor::execute_csrrci);
 
     // U/J types
-    cmd_mapping_UJ[mask_lui] =   Instruction(&RiscvProcessor::decode_U,  &RiscvProcessor::execute_lui);
-    cmd_mapping_UJ[mask_auipc] = Instruction(&RiscvProcessor::decode_U,  &RiscvProcessor::execute_auipc);
-    cmd_mapping_UJ[mask_jal] =   Instruction(&RiscvProcessor::decode_J,  &RiscvProcessor::execute_jal);
+    cmd_mapping_UJ[mask_lui] =   Instruction("lui", &RiscvProcessor::decode_U,  &RiscvProcessor::execute_lui);
+    cmd_mapping_UJ[mask_auipc] = Instruction("auipc", &RiscvProcessor::decode_U,  &RiscvProcessor::execute_auipc);
+    cmd_mapping_UJ[mask_jal] =   Instruction("jal", &RiscvProcessor::decode_J,  &RiscvProcessor::execute_jal);
 
     // SYSTEM types
-    cmd_mapping_SYSTEM[mask_fence] =  Instruction(nullptr,  nullptr);
-    cmd_mapping_SYSTEM[mask_mret] =   Instruction(nullptr,  &RiscvProcessor::execute_mret);
-    cmd_mapping_SYSTEM[mask_ebreak] = Instruction(nullptr,  &RiscvProcessor::execute_ebreak);
-    cmd_mapping_SYSTEM[mask_ecall] =  Instruction(nullptr,  &RiscvProcessor::execute_ecall);
+    cmd_mapping_SYSTEM[mask_fence] =  Instruction("fence", nullptr,  nullptr);
+    cmd_mapping_SYSTEM[mask_mret] =   Instruction("mret", nullptr,  &RiscvProcessor::execute_mret);
+    cmd_mapping_SYSTEM[mask_ebreak] = Instruction("ebreak", nullptr,  &RiscvProcessor::execute_ebreak);
+    cmd_mapping_SYSTEM[mask_ecall] =  Instruction("ecall", nullptr,  &RiscvProcessor::execute_ecall);
+}
+
+void RiscvProcessor::SetVerbose(const bool verbose)
+{
+  m_verbose = verbose;
 }
 
 void RiscvProcessor::Reset()
@@ -307,17 +312,20 @@ void RiscvProcessor::Step()
 
 void RiscvProcessor::ExecuteCmd(const uint32_t cmd)
 {
+  if (m_verbose)
+  {
     std::cout << "instruction 0x";
     std::cout << std::setw(8) << std::setfill('0') << std::hex << cmd;
-    std::cout << " ...  ";
+    std::cout << " ...    ";
+  }
 
-    // Exception and interrupt checking
-    if (m_pc % 4 != 0) {
-        RaiseException(ex_instruction_address_misaligned);
-        return;
-    }
+  // Exception and interrupt checking
+  if (m_pc % 4 != 0) {
+      RaiseException(ex_instruction_address_misaligned);
+      return;
+  }
 
-    // Load bits for interrupts
+  // Load bits for interrupts
   uint32_t mip = m_csr_table[csr_mip];
   uint32_t mip_usip = (mip >> 0) & 0x1;
   uint32_t mip_msip = (mip >> 3) & 0x1;
@@ -382,54 +390,187 @@ void RiscvProcessor::ExecuteCmd(const uint32_t cmd)
 
     // Get and run the instruction decoder and executor
     bool instructionFound = false;
-    InstructionDecoder decoder;
-    InstructionExector executor;
+    Instruction instruction;
+    // InstructionDecoder decoder;
+    // InstructionExector executor;
 
     // Try R types
     if (cmd_mapping_R.find(cmd & mask_R) != cmd_mapping_R.end()) {
-        decoder = cmd_mapping_R[cmd & mask_R].decoder;
-        executor = cmd_mapping_R[cmd & mask_R].executor;
+        instruction = cmd_mapping_R[cmd & mask_R];
         instructionFound = true;
     }
     // Try I/S/B types
     else if (cmd_mapping_ISB.find(cmd & mask_ISB) != cmd_mapping_ISB.end()) {
-        decoder = cmd_mapping_ISB[cmd & mask_ISB].decoder;
-        executor = cmd_mapping_ISB[cmd & mask_ISB].executor;
+        instruction = cmd_mapping_ISB[cmd & mask_ISB];
         instructionFound = true;
     }
     // Try U/J types
     else if (cmd_mapping_UJ.find(cmd & mask_UJ) != cmd_mapping_UJ.end()) {
-        decoder = cmd_mapping_UJ[cmd & mask_UJ].decoder;
-        executor = cmd_mapping_UJ[cmd & mask_UJ].executor;
+        instruction = cmd_mapping_UJ[cmd & mask_UJ];
         instructionFound = true;
     }
     // Try "System" instructions
     else if (cmd_mapping_SYSTEM.find(cmd & mask_SYSTEM) != cmd_mapping_SYSTEM.end()) {
-        decoder = cmd_mapping_SYSTEM[cmd & mask_SYSTEM].decoder;
-        executor = cmd_mapping_SYSTEM[cmd & mask_SYSTEM].executor;
+        instruction = cmd_mapping_SYSTEM[cmd & mask_SYSTEM];
         instructionFound = true;
     }
 
     // Finally... decode the instruction and execute
     if (instructionFound)
     {
-        if (decoder != nullptr)
-        {
-            (this->*decoder)(cmd);
-        }
+      if (m_verbose)
+      {
+        VerbosePrintInstruction(instruction);
+      }
 
-        if (executor != nullptr)
-        {
-            (this->*executor)();
-        }
+      if (instruction.decoder != nullptr)
+      {
+          (this->*instruction.decoder)(cmd);
+      }
 
+      if (instruction.executor != nullptr)
+      {
+          (this->*instruction.executor)();
+      }
+
+      if (m_verbose)
+      {
         std::cout << std::endl;
-        return;
+      }
+      return;
     }
 
     // No instruction matched
-    std::cout << "unknown instruction" << std::endl;
+    if (m_verbose)
+    {
+      std::cout << "unknown instruction" << std::endl;
+    }
     RaiseException(ex_illegal_instruction);
+}
+
+void RiscvProcessor::VerbosePrintInstruction(const RiscvProcessor::Instruction& inst)
+{
+  if (inst.decoder == &RiscvProcessor::decode_R)
+  {
+    // R type
+    std::cout << std::setw(6);
+    std::cout << std::setfill(' ');
+    std::cout << std::left;
+    std::cout << inst.displayName;
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rd;
+    std::cout << ",";
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rs1;
+    std::cout << ",";
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rs2;
+  }
+  else if (inst.decoder == &RiscvProcessor::decode_I)
+  {
+    // I type
+    std::cout << std::setw(6);
+    std::cout << std::setfill(' ');
+    std::cout << std::left;
+    std::cout << inst.displayName;
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rd;
+    std::cout << ",";
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rs1;
+    std::cout << ",";
+
+    std::cout << std::setw(0);
+    std::cout << std::setfill(' ');
+    std::cout << std::hex << m_decoded_imm;
+  }
+  else if (inst.decoder == &RiscvProcessor::decode_S)
+  {
+    // S type
+    std::cout << std::setw(6);
+    std::cout << std::setfill(' ');
+    std::cout << std::left;
+    std::cout << inst.displayName;
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rs1;
+    std::cout << ",";
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rs2;
+    std::cout << ",";
+
+    std::cout << std::setw(0);
+    std::cout << std::setfill(' ');
+    std::cout << std::hex << m_decoded_imm;
+  }
+  else if (inst.decoder == &RiscvProcessor::decode_B)
+  {
+    // B type
+    std::cout << std::setw(6);
+    std::cout << std::setfill(' ');
+    std::cout << std::left;
+    std::cout << inst.displayName;
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rs1;
+    std::cout << ",";
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rs2;
+    std::cout << ",";
+
+    std::cout << std::setw(0);
+    std::cout << std::setfill(' ');
+    std::cout << std::hex << m_decoded_imm;
+  }
+  else if (inst.decoder == &RiscvProcessor::decode_U)
+  {
+    // U type
+    std::cout << std::setw(6);
+    std::cout << std::setfill(' ');
+    std::cout << std::left;
+    std::cout << inst.displayName;
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rd;
+
+    std::cout << std::setw(0);
+    std::cout << std::setfill(' ');
+    std::cout << "," << std::hex << m_decoded_imm;
+  }
+  else if (inst.decoder == &RiscvProcessor::decode_J)
+  {
+    // J type
+    std::cout << std::setw(6);
+    std::cout << std::setfill(' ');
+    std::cout << std::left;
+    std::cout << inst.displayName;
+
+    std::cout << std::setw(0);
+    std::cout << "x" << std::dec << m_decoded_rd;
+
+    std::cout << std::setw(0);
+    std::cout << std::setfill(' ');
+    std::cout << "," << std::hex << m_decoded_imm;
+  }
+  else if (inst.decoder == nullptr)
+  {
+    // SYSTEM type
+    std::cout << std::setw(6);
+    std::cout << std::setfill(' ');
+    std::cout << std::left;
+    std::cout << inst.displayName;
+  }
+  else
+  {
+    std::cout << "unknown for v";
+  }
 }
 
 
@@ -574,20 +715,7 @@ void RiscvProcessor::decode_J(uint32_t cmd) {
 
 
 void RiscvProcessor::execute_lui() {
-    // TODO move to verbose method
-    std::cout << std::setw(6);
-    std::cout << std::setfill(' ');
-    std::cout << std::left;
-    std::cout << "lui";
-
-    std::cout << std::setw(0);
-    std::cout << "x" << std::dec << m_decoded_rd;
-
-    std::cout << std::setw(0);
-    std::cout << std::setfill(' ');
-    std::cout << "," << std::hex << m_decoded_imm;
-
-    SetReg(m_decoded_rd, m_decoded_imm);
+  SetReg(m_decoded_rd, m_decoded_imm);
 }
 
 void RiscvProcessor::execute_auipc() {

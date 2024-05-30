@@ -3,6 +3,7 @@
 
 #include <cctype>
 #include <array>
+#include <string>
 #include <unordered_map>
 #include "memorymap.h"
 
@@ -14,6 +15,8 @@ class RiscvProcessor
 public:
     typedef uint32_t Register;
     RiscvProcessor(MemoryMap& mem);
+
+    void SetVerbose(const bool verbose);
 
     void Reset();
 
@@ -66,6 +69,7 @@ private:
 
     // Debug/run info
     unsigned long m_instruction_count;
+    bool m_verbose;
 
     // Breakpoints
     // TODO
@@ -102,16 +106,20 @@ private:
     using InstructionDecoder = void (RiscvProcessor::*)(uint32_t);
     using InstructionExector = void (RiscvProcessor::*)(void);
     struct Instruction {
+        std::string displayName;
         InstructionDecoder decoder;
         InstructionExector executor;
 
         Instruction() = default;
 
-        Instruction(InstructionDecoder d, InstructionExector e)
-        : decoder(d),
+        Instruction(std::string n, InstructionDecoder d, InstructionExector e)
+        : displayName(n),
+          decoder(d),
           executor(e)
         {}
     };
+
+    void VerbosePrintInstruction(const Instruction& inst);
 
     std::unordered_map<uint32_t, Instruction> cmd_mapping_R;
     std::unordered_map<uint32_t, Instruction> cmd_mapping_ISB;
