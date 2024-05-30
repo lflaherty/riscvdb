@@ -161,7 +161,7 @@ void RiscvProcessor::SetReg(const unsigned regNum, const Register newValue)
     m_reg[regNum] = newValue;
 }
 
-unsigned long RiscvProcessor::GetInstructionCount() const
+unsigned long long RiscvProcessor::GetInstructionCount() const
 {
     return m_instruction_count;
 }
