@@ -63,8 +63,9 @@ void ElfFileLoader::LoadMemory(MemoryMap& mem)
         if (progHdr.p_type == PT_LOAD)
         {
             std::cout << "LOAD";
-            std::cout << "    VirtAddr = " << progHdr.p_paddr;
-            std::cout << "    MemSize = " << progHdr.p_memsz;
+            std::cout << std::hex;
+            std::cout << "    VirtAddr = 0x" << progHdr.p_paddr;
+            std::cout << "    MemSize = 0x" << progHdr.p_memsz;
             std::cout << std::endl;
 
             loadedSize += progHdr.p_memsz;
@@ -84,6 +85,7 @@ void ElfFileLoader::LoadMemory(MemoryMap& mem)
     }
 
     std::cout << std::endl;
+    std::cout << std::dec;
     std::cout << "Loaded " << loadedSize << " B into memory" << std::endl;
     std::cout << std::endl;
 }
