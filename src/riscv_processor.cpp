@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <functional>
 
 namespace riscvdb
 {
@@ -185,6 +186,7 @@ uint32_t RiscvProcessor::GetCSRValue(const uint32_t csr_num) const
         case csr_mtval:
         case csr_mip:
             val = m_csr_table.at(csr_num);
+            break;
 
         default:
             {
