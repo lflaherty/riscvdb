@@ -26,7 +26,7 @@ public:
     Register GetReg(const unsigned regNum) const;
     void SetReg(const unsigned regNum, const Register newValue);
 
-    unsigned long GetInstructionCount() const;
+    unsigned long long GetInstructionCount() const;
 
     // Privilege levels
     static const uint8_t PRV_USER;
@@ -68,7 +68,7 @@ private:
     std::array<Register, 32> m_reg; // x0..x31 machine registers
 
     // Debug/run info
-    unsigned long m_instruction_count;
+    unsigned long long m_instruction_count;
     bool m_verbose;
 
     // Breakpoints
