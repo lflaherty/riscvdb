@@ -71,6 +71,11 @@ void SimHost::Pause()
     m_simRunner.join();
 }
 
+void SimHost::SetVerbose(bool verbose)
+{
+    m_processor.SetVerbose(verbose);
+}
+
 void SimHost::runSimWorker(unsigned long numInstructions)
 {
     unsigned long instCounter = 0;

@@ -35,6 +35,8 @@ public:
     void Run(unsigned long numInstructions = 0);
     void Pause();
 
+    void SetVerbose(bool verbose);
+
 private:
     std::atomic<SimState> m_state;
 
