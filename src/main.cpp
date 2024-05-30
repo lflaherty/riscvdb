@@ -36,35 +36,10 @@ int main(int argc, char* argv[])
     if (result.count("executable"))
     {
         std::string pathStr = result["executable"].as<std::string>();
-        std::filesystem::path path(pathStr);
-
-        if (!std::filesystem::exists(path))
+        int ret = simHost.LoadFile(pathStr);
+        if (ret != 0)
         {
-            std::cerr << "File " << pathStr << " does not exist" << std::endl;
-            return -1;
-        }
-
-        std::cout << "Loading executable " << pathStr << std::endl;
-
-        std::string ext = path.extension();
-        try
-        {
-            if (ext == riscvdb::ElfFileLoader::EXT) {
-                riscvdb::ElfFileLoader elfFileLoader(pathStr);
-                simHost.LoadFile(elfFileLoader);
-            } else if (ext == std::string(".bin")) {
-                std::cerr << "raw binaries not yet supported" << std::endl;
-                return -1;
-            } else {
-                std::cerr << "unexpected filetype " << ext << std::endl;
-                return -1;
-            }
-        }
-        catch (std::runtime_error& err)
-        {
-            std::cerr << "failed to load file" << std::endl;
-            std::cerr << err.what() << std::endl;
-            return -1;
+            return ret;
         }
     }
 

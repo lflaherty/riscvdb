@@ -8,6 +8,12 @@
 
 namespace riscvdb {
 
+FileLoader::FileLoader(const std::string& pathStr)
+: m_pathStr(pathStr)
+{
+    // empty
+}
+
 void FileLoader::LoadFile(const std::string& path)
 {
     std::ifstream ifs(path, std::ios::binary | std::ios::ate);
@@ -35,9 +41,15 @@ void FileLoader::LoadFile(const std::string& path)
     }
 }
 
+const std::string& FileLoader::PathStr() const
+{
+    return m_pathStr;
+}
+
 const std::string ElfFileLoader::EXT = ".elf";
 
 ElfFileLoader::ElfFileLoader(const std::string& path)
+: FileLoader(path)
 {
     LoadFile(path);
     LoadHeader();
