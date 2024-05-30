@@ -20,6 +20,8 @@ private:
     SimHost& m_simHost;
 
     void sigint_handler(int signum);
+
+    static const std::string MSG_USAGE;
 };
 
 } // namespace riscvdb
