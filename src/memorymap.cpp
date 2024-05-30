@@ -48,7 +48,8 @@ void MemoryMap::Put(const AddrType address, const std::vector<std::byte>& data)
         throw std::out_of_range(ss.str());
     }
 
-    AddrType currentAddr = address;
+    AddrType i = 0;  // indexes `address`
+    AddrType currentAddr = address;  // raw physical address to be storing in
     AddrType bytesRemaining = data.size();
     while (bytesRemaining > 0)
     {
@@ -64,10 +65,11 @@ void MemoryMap::Put(const AddrType address, const std::vector<std::byte>& data)
             m_mem[baseAddress] = std::move(newBlock);
         }
 
-        std::copy(data.begin() + currentAddr,
-                  data.begin() + currentAddr + bytesToCopy,
+        std::copy(data.begin() + i,
+                  data.begin() + i + bytesToCopy,
                   m_mem[baseAddress].get()->begin() + offset);
 
+        i += bytesToCopy;
         currentAddr += bytesToCopy;
         bytesRemaining -= bytesToCopy;
     }
