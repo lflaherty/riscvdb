@@ -26,6 +26,22 @@ const uint32_t RiscvProcessor::csr_mip = 0x344;
 const uint8_t RiscvProcessor::PRV_USER = 0;
 const uint8_t RiscvProcessor::PRV_MACHINE = 3;
 
+// Exceptions
+const RiscvProcessor::Exception RiscvProcessor::ex_user_software_interrupt          = {1, 0};
+const RiscvProcessor::Exception RiscvProcessor::ex_machine_software_interrupt       = {1, 3};
+const RiscvProcessor::Exception RiscvProcessor::ex_user_timer_interrupt             = {1, 4};
+const RiscvProcessor::Exception RiscvProcessor::ex_machine_timer_interrupt          = {1, 7};
+const RiscvProcessor::Exception RiscvProcessor::ex_user_external_interrupt          = {1, 8};
+const RiscvProcessor::Exception RiscvProcessor::ex_machine_external_interrupt       = {1, 11};
+const RiscvProcessor::Exception RiscvProcessor::ex_instruction_address_misaligned   = {0, 0};
+const RiscvProcessor::Exception RiscvProcessor::ex_illegal_instruction              = {0, 2};
+const RiscvProcessor::Exception RiscvProcessor::ex_breakpoint                       = {0, 3};
+const RiscvProcessor::Exception RiscvProcessor::ex_load_address_misaligned          = {0, 4};
+const RiscvProcessor::Exception RiscvProcessor::ex_store_address_misaligned         = {0, 6};
+const RiscvProcessor::Exception RiscvProcessor::ex_environment_call_from_Umode      = {0, 8};
+const RiscvProcessor::Exception RiscvProcessor::ex_environment_call_from_Mmode      = {0, 11};
+
+
 RiscvProcessor::RiscvProcessor(MemoryMap& mem)
 : m_mem(mem),
   m_pc(0),
@@ -581,7 +597,7 @@ void RiscvProcessor::VerbosePrintInstruction(const RiscvProcessor::Instruction& 
 
 
 // Exception handling ----------------------------------------------------------
-void RiscvProcessor::RaiseException(const RiscvProcessor::ExceptionReg& exception_data)
+void RiscvProcessor::RaiseException(const RiscvProcessor::Exception& exception_data)
 {
     // this didn't count as an instruction
     m_instruction_count--;
@@ -596,18 +612,18 @@ void RiscvProcessor::RaiseException(const RiscvProcessor::ExceptionReg& exceptio
     SetCSRValue(csr_mepc, m_pc);
 
     // Set mtval
-    if (&exception_data == &ex_illegal_instruction)
+    if (exception_data == ex_illegal_instruction)
     {
         // Store the instruction
         SetCSRValue(csr_mtval, m_mem.ReadWord(m_pc));
     }
-    else if (&exception_data == &ex_instruction_address_misaligned)
+    else if (exception_data == ex_instruction_address_misaligned)
     {
         // Store instr address
         SetCSRValue(csr_mtval, m_pc);
     }
-    else if (&exception_data == &ex_load_address_misaligned ||
-             &exception_data == &ex_store_address_misaligned)
+    else if (exception_data == ex_load_address_misaligned ||
+             exception_data == ex_store_address_misaligned)
     {
         // Store mem address
         SetCSRValue(csr_mtval, m_reg[m_decoded_rs1] + m_decoded_imm);
@@ -1162,8 +1178,11 @@ void RiscvProcessor::execute_csrrw() {
   if (ret.set_csr_read_only || ret.set_csr_undefined_num || ret.set_csr_user_mode) {
     // Undo work
     SetReg(m_decoded_rd, reg_rd);
-    if (ret.set_csr_user_mode)   // also undo set_csr if in user mode
+    if (ret.set_csr_user_mode)
+    {
+      // also undo set_csr if in user mode
       SetCSRValue(csr_num, csr_val);
+    }
 
     // Raise expcetion
     RaiseException(ex_illegal_instruction);

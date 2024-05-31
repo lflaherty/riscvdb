@@ -146,10 +146,7 @@ void SimHost::runSimWorker(unsigned long numInstructions)
 
         // check for illegal instruction interrupt
         uint32_t csr_mcause = m_processor.GetCSRValue(RiscvProcessor::csr_mcause);
-        // TODO the magic number here (2) is the mcause value for invalid instruction
-        // should move the magic number back to something in riscv_processor.h that
-        // is publicly accessible.
-        if ((csr_mcause & 0xF) == 2)
+        if ((csr_mcause & 0xF) == RiscvProcessor::ex_illegal_instruction.exceptionCode)
         {
             // illegal instruction :(
             std::cout << "illegal instruction at PC = 0x";
