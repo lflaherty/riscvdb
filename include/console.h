@@ -62,8 +62,6 @@ private:
     std::map<std::string, std::shared_ptr<ConsoleCommand>> m_commandsLong;
     std::map<std::string, std::shared_ptr<ConsoleCommand>> m_commandsShort;
 
-    SimHost& m_sim;
-
     ConsoleCommand::CmdRetType runCommand(const std::string& input);
 };
 

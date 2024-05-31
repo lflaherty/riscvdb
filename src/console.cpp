@@ -118,7 +118,6 @@ void SigIntHandler::static_signalHandler(int signum)
 const std::string Console::CONSOLE_PROMPT = "(riscvdb) ";
 
 Console::Console(SimHost& simHost)
-: m_sim(simHost)
 {
     // Console/app commands
     addCmd(std::make_shared<CmdHelp>(*this));
