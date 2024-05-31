@@ -10,6 +10,9 @@
 namespace riscvdb
 {
 
+// forward declaration
+class FileLoader;
+
 class SimHost {
 public:
     static const MemoryMap::AddrType DEFAULT_MEM_ORIGIN = 0x0;

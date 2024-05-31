@@ -3,7 +3,6 @@
 #include "cxxopts.hpp"
 #include "console.h"
 #include "simhost.h"
-#include "fileloader.h"
 
 int main(int argc, char* argv[])
 {
