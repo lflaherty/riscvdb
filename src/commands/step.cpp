@@ -1,4 +1,4 @@
-#include "commands/continue.h"
+#include "commands/step.h"
 
 #include <iostream>
 #include <csignal>
@@ -6,17 +6,17 @@
 
 namespace riscvdb {
 
-const std::string CmdContinue::MSG_USAGE =
-"Usage: continue [number of instructions]\n"
+const std::string CmdStep::MSG_USAGE =
+"Usage: step number_of_instructions\n"
 "Set number of instructions to 0 or omit to run indefinitely";
 
-CmdContinue::CmdContinue(SimHost& simHost)
+CmdStep::CmdStep(SimHost& simHost)
 : m_simHost(simHost)
 {
   // Empty
 }
 
-void CmdContinue::sigint_handler(int signum)
+void CmdStep::sigint_handler(int signum)
 {
   if (signum == SIGINT)
   {
@@ -32,14 +32,14 @@ void CmdContinue::sigint_handler(int signum)
   }
 }
 
-ConsoleCommand::CmdRetType CmdContinue::run(std::vector<std::string>& args)
+ConsoleCommand::CmdRetType CmdStep::run(std::vector<std::string>& args)
 {
-  unsigned long numInstructions = 0;
+  unsigned long numInstructions = 1;
 
   switch(args.size())
   {
     case 1:
-      // default - run indefinitely
+      // default - run 1 instruction
       break;
 
     case 2:
@@ -85,7 +85,7 @@ ConsoleCommand::CmdRetType CmdContinue::run(std::vector<std::string>& args)
   }
 
   // Register a SIGINT handler for this class
-  SigIntHandler sigint(std::bind(&CmdContinue::sigint_handler, this, std::placeholders::_1));
+  SigIntHandler sigint(std::bind(&CmdStep::sigint_handler, this, std::placeholders::_1));
 
   // and wait while running
   while (m_simHost.GetState() == SimHost::RUNNING)
@@ -113,10 +113,10 @@ ConsoleCommand::CmdRetType CmdContinue::run(std::vector<std::string>& args)
   return CmdRetType_OK;
 }
 
-std::string CmdContinue::nameLong() { return "continue"; }
+std::string CmdStep::nameLong() { return "step"; }
 
-std::string CmdContinue::nameShort() { return "c"; }
+std::string CmdStep::nameShort() { return "s"; }
 
-std::string CmdContinue::helpStr() { return "Resume execution"; }
+std::string CmdStep::helpStr() { return "Single step instructions"; }
 
 } // namespace riscvdb
