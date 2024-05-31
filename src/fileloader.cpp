@@ -166,8 +166,113 @@ void ElfFileLoader::LoadProgramHeaders(MemoryMap& mem)
 
 void ElfFileLoader::LoadSymbols(SimHost& simHost)
 {
-    // TODO
-    (void)simHost;
+    // find section string table
+    Elf32_Off shStrTabOff = ((m_header.e_shstrndx) * m_header.e_shentsize) + m_header.e_shoff;
+    Elf32_Shdr shStrTable;
+    std::memcpy(&shStrTable, m_filebytes.data() + shStrTabOff,
+                sizeof(shStrTable));
+    // note: actual string table located at shStrTable.sh_offset
+
+    bool strTableFound = false;
+    bool symTableFound = false;
+    Elf32_Shdr strTableHdr;
+    Elf32_Shdr symTableHdr;
+    std::memset(&strTableHdr, 0, sizeof(strTableHdr));
+    std::memset(&symTableHdr, 0, sizeof(symTableHdr));
+
+
+    std::cout << "Found sections:" << std::endl;
+
+    Elf32_Off offset = m_header.e_shoff;
+    for (Elf32_Half i = 0; i < m_header.e_shnum; ++i)
+    {
+        std::cout << i << " ";
+
+        Elf32_Shdr sectionHdr;
+        std::memcpy(&sectionHdr, m_filebytes.data() + offset,
+                    sizeof(sectionHdr));
+
+        offset += sizeof(sectionHdr);
+
+        // get name:
+        Elf32_Off nameOffset = shStrTable.sh_offset + sectionHdr.sh_name;
+        std::byte c;
+        while ((c = m_filebytes[nameOffset++]) != std::byte{'\0'})
+        {
+            std::cout << static_cast<char>(c);
+        }
+
+        std::cout << "\t";
+
+        switch (sectionHdr.sh_type)
+        {
+            case SHT_STRTAB:
+            {
+                std::cout << "STRTAB";
+
+                if (i == m_header.e_shstrndx)
+                {
+                    std::cout << "  (shstrtab)";
+                    break;
+                }
+
+                if (strTableFound)
+                {
+                    throw std::runtime_error("multiple string tables in ELF");
+                }
+
+                strTableFound = true;
+                strTableHdr = sectionHdr;
+                break;
+            }
+
+            case SHT_SYMTAB:
+            {
+                std::cout << "SYMTAB";
+
+                if (symTableFound)
+                {
+                    throw std::runtime_error("multiple symbol tables in ELF");
+                }
+
+                symTableFound = true;
+                symTableHdr = sectionHdr;
+                break;
+            }
+
+            default:
+                std::cout << "(unknown: " << sectionHdr.sh_type << ")";
+        }
+
+        std::cout << std::hex;
+        std::cout << "\toffset " << sectionHdr.sh_offset;
+        std::cout << std::endl;
+    }
+
+    // TODO dynamic sections
+
+    if (symTableFound && strTableFound)
+    {
+        std::cout << std::endl;
+        std::cout << "Found symbols:" << std::endl;
+        // read symbol table
+        Elf32_Off symTableOffset = symTableHdr.sh_offset;
+        for (Elf32_Word i = 0; i < symTableHdr.sh_entsize; ++i)
+        {
+            std::cout << std::dec << i << " ";
+
+            Elf32_Sym symbol;
+            std::memcpy(&symbol, m_filebytes.data() + symTableOffset,
+                        sizeof(symbol));
+
+            symTableOffset += sizeof(symbol);
+
+            // TODO decode symbol and store in simHost
+            (void)simHost;
+
+            std::cout << std::endl;
+        }
+    }
 }
 
 } // namespace riscvdb

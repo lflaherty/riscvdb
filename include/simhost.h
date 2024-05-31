@@ -45,6 +45,19 @@ public:
     void RemoveBreakpoint(const unsigned int breakpointNumber);
     void ClearBreakpoints();
 
+    enum SymbolType
+    {
+        FUNC,
+        OBJECT
+    };
+    struct Symbol
+    {
+        SymbolType type;
+        MemoryMap::AddrType addr;
+    };
+    typedef std::unordered_map<std::string,Symbol> SymbolMapType;
+    SymbolMapType& SymbolMap();
+
     void SetVerbose(bool verbose);
 
 private:
@@ -59,6 +72,8 @@ private:
     // O(1)  lookup time for searching for instructions when running)
     std::unordered_map<MemoryMap::AddrType, unsigned int> m_breakpoints;
     unsigned int m_breakpointCount;
+
+    SymbolMapType m_symbolMap;
 
     // the virtual CPU runs in this thread:
     std::thread m_simRunner;
