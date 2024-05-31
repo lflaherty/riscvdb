@@ -98,6 +98,7 @@ void SimHost::ResetSim()
 
     m_mem.Clear();
     m_processor.Reset();
+    m_symbolMap.clear();
 
     // now that memory is cleared, reload original ELF back in
     std::cout << "reloading binary" << std::endl;
@@ -164,6 +165,11 @@ void SimHost::ClearBreakpoints()
 {
     m_breakpoints.clear();
     // Note: we don't reset the breakpoint counter
+}
+
+SimHost::SymbolMapType& SimHost::SymbolMap()
+{
+    return m_symbolMap;
 }
 
 void SimHost::SetVerbose(bool verbose)
