@@ -328,8 +328,6 @@ void RiscvProcessor::Step()
     // Increase PC
     m_pc += 4;  // increase by a word
     m_instruction_count++;
-
-    // TODO check for breakpoint
 }
 
 void RiscvProcessor::ExecuteCmd(const uint32_t cmd)
