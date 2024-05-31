@@ -3,13 +3,16 @@
 #include <thread>
 #include <chrono>
 #include <filesystem>
+#include <algorithm>
+#include <utility>
 
 namespace riscvdb {
 
 SimHost::SimHost()
 : m_state(IDLE),
   m_mem(DEFAULT_MEM_ORIGIN, DEFAULT_MEM_SIZE),
-  m_processor(m_mem)
+  m_processor(m_mem),
+  m_breakpointCount(0)
 {
     // empty
 }
@@ -125,6 +128,44 @@ void SimHost::Pause()
     m_simRunner.join();
 }
 
+int SimHost::AddBreakpoint(MemoryMap::AddrType addr)
+{
+    auto it = m_breakpoints.find(addr);
+    if (it != m_breakpoints.end())
+    {
+        std::stringstream ss;
+        ss << "breakpoint at address " << addr << " already exists: ";
+        ss << "breakpoint " << it->second;
+        throw std::runtime_error(ss.str());
+    }
+
+    unsigned int bkptNum = m_breakpointCount + 1;
+    m_breakpointCount++;
+
+    m_breakpoints.insert(std::make_pair(addr, bkptNum));
+
+    return bkptNum;
+}
+
+void SimHost::RemoveBreakpoint(const unsigned int breakpointNumber)
+{
+    auto it = std::find_if(std::begin(m_breakpoints), std::end(m_breakpoints),
+                           [&breakpointNumber](auto&& p) { return p.second == breakpointNumber; });
+
+    if (it == std::end(m_breakpoints))
+    {
+        throw std::invalid_argument("breakpoint number not found");
+    }
+
+    m_breakpoints.erase(it);
+}
+
+void SimHost::ClearBreakpoints()
+{
+    m_breakpoints.clear();
+    // Note: we don't reset the breakpoint counter
+}
+
 void SimHost::SetVerbose(bool verbose)
 {
     m_processor.SetVerbose(verbose);
@@ -159,7 +200,30 @@ void SimHost::runSimWorker(unsigned long numInstructions)
             continue;
         }
 
-        // TODO check for if breakpoint hit
+        // check for machine breakpoint
+        if ((csr_mcause & 0xF) == RiscvProcessor::ex_breakpoint.exceptionCode)
+        {
+            // illegal instruction :(
+            std::cout << "machine breakpoint at PC = 0x";
+            std::cout << std::hex << std::setfill('0') << std::setw(8);
+            std::cout << m_processor.GetPC();
+            std::cout << std::endl;
+
+            m_state = PAUSED;
+            continue;
+        }
+
+        // check for host breakpoint
+        auto currentPC = m_processor.GetPC();
+        auto bkpt_it = m_breakpoints.find(currentPC);
+        if (bkpt_it != m_breakpoints.end())
+        {
+            // host breakpoint found
+            std::cout << "breakpoint " << bkpt_it->second << " hit" << std::endl;
+
+            m_state = PAUSED;
+            continue;
+        }
     }
 }
 

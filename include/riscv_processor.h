@@ -87,8 +87,6 @@ public:
     // Run next instruction
     void Step();
 
-    // TODO breakpoints
-
 private:
     // Basic machine data
     MemoryMap& m_mem;   // main memory

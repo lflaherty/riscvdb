@@ -139,7 +139,8 @@ Console::Console(SimHost& simHost)
     // TODO: add command to set registers
 
     // Breakpoint commands
-    addCmd(std::make_shared<CmdBreak>());
+    addCmd(std::make_shared<CmdBreak>(simHost));
+    addCmd(std::make_shared<CmdDelete>(simHost));
 
     using namespace linenoise_wrapper;
     Linenoise::setHintAppearance(Linenoise::COLOR_MAGENTA, false);

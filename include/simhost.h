@@ -3,6 +3,7 @@
 
 #include <thread>
 #include <atomic>
+#include <unordered_map>
 #include "fileloader.h"
 #include "memorymap.h"
 #include "riscv_processor.h"
@@ -39,6 +40,11 @@ public:
     void Run(unsigned long numInstructions = 0);
     void Pause();
 
+    // returns breakpoint number
+    int AddBreakpoint(const MemoryMap::AddrType address);
+    void RemoveBreakpoint(const unsigned int breakpointNumber);
+    void ClearBreakpoints();
+
     void SetVerbose(bool verbose);
 
 private:
@@ -48,6 +54,11 @@ private:
 
     MemoryMap m_mem;
     RiscvProcessor m_processor;
+
+    // maps Addr -> breakpoint number to have good run-time efficiency (for
+    // O(1)  lookup time for searching for instructions when running)
+    std::unordered_map<MemoryMap::AddrType, unsigned int> m_breakpoints;
+    unsigned int m_breakpointCount;
 
     // the virtual CPU runs in this thread:
     std::thread m_simRunner;
