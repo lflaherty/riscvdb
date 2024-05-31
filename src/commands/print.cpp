@@ -183,7 +183,7 @@ void CmdPrint::ArgParse::parse(std::vector<std::string>& args)
 void CmdPrint::runPrintRegPC()
 {
   std::cout << "PC = 0x";
-  std::cout << std::hex << std::setfill('0') << std::setw(8);
+  std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
   std::cout << m_simHost.Processor().GetPC();
   std::cout << std::endl;
 }
@@ -191,7 +191,7 @@ void CmdPrint::runPrintRegPC()
 void CmdPrint::runPrintRegStd(const CmdPrint::ArgParse& parser)
 {
   std::cout << std::dec << "x" << parser.regNum << " = 0x";
-  std::cout << std::hex << std::setfill('0') << std::setw(8);
+  std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
   std::cout << m_simHost.Processor().GetReg(parser.regNum);
   std::cout << std::endl;
 }
@@ -205,7 +205,7 @@ void CmdPrint::runPrintMem(const CmdPrint::ArgParse& parser)
     for (MemoryMap::AddrType i = 0; i < parser.memSize; i += 16)
     {
       // address on left:
-      std::cout << std::hex << std::setfill('0') << std::setw(8);
+      std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
       std::cout << i << ": ";
 
       MemoryMap::AddrType bytesThisRow = std::min(16ULL, parser.memSize - i);
@@ -215,7 +215,7 @@ void CmdPrint::runPrintMem(const CmdPrint::ArgParse& parser)
         MemoryMap::AddrType addr = parser.memAddr + i + j;
         m_simHost.Memory().Get(addr, b);
 
-        std::cout << std::hex << std::setfill('0') << std::setw(4);
+        std::cout << std::hex << std::right <<std::setfill('0') << std::setw(4);
         std::cout << static_cast<unsigned int>(b);
 
         if (j < (bytesThisRow - 1))
@@ -232,9 +232,9 @@ void CmdPrint::runPrintMem(const CmdPrint::ArgParse& parser)
     // print single word
     uint32_t w = m_simHost.Memory().ReadWord(parser.memAddr);
 
-    std::cout << std::hex << std::setfill('0') << std::setw(8);
+    std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
     std::cout << parser.memAddr << ": ";
-    std::cout << std::hex << std::setfill('0') << std::setw(8);
+    std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
     std::cout << w << std::endl;
   }
 }
