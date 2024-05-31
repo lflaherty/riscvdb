@@ -51,6 +51,7 @@ public:
 
     Console(SimHost& simHost);
     int run();
+    int runFromScript(const std::string& scriptFilename);
     void printHelp();
     void printHelpCmd(std::string& cmdName);
 
@@ -62,6 +63,8 @@ private:
     std::map<std::string, std::shared_ptr<ConsoleCommand>> m_commandsShort;
 
     SimHost& m_sim;
+
+    ConsoleCommand::CmdRetType runCommand(const std::string& input);
 };
 
 } // namespace riscvdb

@@ -10,6 +10,7 @@ int main(int argc, char* argv[])
     cxxopts::Options options("riscvdb", "RISC V simulator and debugger");
     options.add_options()
         ("executable", "The RISC V binary to execute", cxxopts::value<std::string>())
+        ("x,script", "Execute script from file", cxxopts::value<std::string>())
         ("h,help", "Print usage");
     options.parse_positional({"executable"});
     options.positional_help("riscv_binary_file");
@@ -44,5 +45,12 @@ int main(int argc, char* argv[])
     }
 
     riscvdb::Console console(simHost);
+
+    if (result.count("script"))
+    {
+        std::string scriptPathStr = result["script"].as<std::string>();
+        return console.runFromScript(scriptPathStr);
+    }
+
     return console.run();
 }
