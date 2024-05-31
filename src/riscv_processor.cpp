@@ -151,6 +151,12 @@ RiscvProcessor::Register RiscvProcessor::GetReg(const unsigned regNum) const
 
 void RiscvProcessor::SetReg(const unsigned regNum, const Register newValue)
 {
+    if (regNum == 0)
+    {
+       // x0 is always 0, disregard
+       return;
+    }
+
     if (regNum > 31)
     {
         std::stringstream ss;
