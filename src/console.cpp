@@ -9,6 +9,8 @@
 #include <iterator>
 #include <functional>
 #include <csignal>
+#include <filesystem>
+#include <fstream>
 
 #include "linenoise_wrapper.h"
 
@@ -171,24 +173,77 @@ int Console::run() {
             continue;
         }
 
-        std::istringstream buffer(input);
-        std::vector<std::string> tokens{std::istream_iterator<std::string>(buffer),
-                                        std::istream_iterator<std::string>()};
-
-        if (tokens.size() == 0) {
-            continue;
-        }
-
-        // general commands
-        std::shared_ptr<ConsoleCommand> cmd = findCmd(tokens[0]);
-        if (cmd) {
-            ConsoleCommand::CmdRetType ret = cmd->run(tokens);
-            if (ret == ConsoleCommand::CmdRetType_QUIT) {
-                break;
-            }
+        ConsoleCommand::CmdRetType cmdRet = runCommand(input);
+        if (cmdRet == ConsoleCommand::CmdRetType::CmdRetType_QUIT)
+        {
+            break;
         }
     }
     return 0;
+}
+
+ConsoleCommand::CmdRetType Console::runCommand(const std::string& input)
+{
+    std::istringstream buffer(input);
+    std::vector<std::string> tokens{std::istream_iterator<std::string>(buffer),
+                                    std::istream_iterator<std::string>()};
+
+    if (tokens.size() == 0)
+    {
+        // no actual command specified
+        return ConsoleCommand::CmdRetType::CmdRetType_OK;
+    }
+
+    std::shared_ptr<ConsoleCommand> cmd = findCmd(tokens[0]);
+    if (cmd)
+    {
+        return cmd->run(tokens);
+    }
+
+    return ConsoleCommand::CmdRetType::CmdRetType_OK;
+}
+
+int Console::runFromScript(const std::string& scriptFilename)
+{
+    std::filesystem::path path(scriptFilename);
+
+    if (!std::filesystem::exists(path))
+    {
+        std::cerr << "Script file " << scriptFilename << " does not exist" << std::endl;
+        return -1;
+    }
+
+    try
+    {
+        std::ifstream scriptFile(path);
+
+        std::string line;
+        while (std::getline(scriptFile, line))
+        {
+            std::cout << "> " << line << std::endl;
+
+            ConsoleCommand::CmdRetType ret = runCommand(line);
+            if (ret == ConsoleCommand::CmdRetType::CmdRetType_QUIT)
+            {
+                // just quit
+                return 0;
+            }
+            else if (ret == ConsoleCommand::CmdRetType::CmdRetType_ERROR)
+            {
+                // on error fall back to console
+                std::cerr << "error executing command: " << line << std::endl;
+                return run();
+            }
+        }
+
+        // if the script hasn't quit the sim already, just fall back to the console
+        return run();
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        return -1;
+    }
 }
 
 void Console::printHelp() {
