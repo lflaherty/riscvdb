@@ -97,9 +97,6 @@ private:
     unsigned long long m_instruction_count;
     bool m_verbose;
 
-    // Breakpoints
-    // TODO
-
     // Machine mode control and status registers (CSRs)
     std::unordered_map<uint32_t, uint32_t> m_csr_table;
 
