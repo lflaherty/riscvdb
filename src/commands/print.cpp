@@ -215,10 +215,10 @@ void CmdPrint::runPrintMem(const CmdPrint::ArgParse& parser)
         MemoryMap::AddrType addr = parser.memAddr + i + j;
         m_simHost.Memory().Get(addr, b);
 
-        std::cout << std::hex << std::right <<std::setfill('0') << std::setw(4);
+        std::cout << std::hex << std::right <<std::setfill('0') << std::setw(2);
         std::cout << static_cast<unsigned int>(b);
 
-        if (j < (bytesThisRow - 1))
+        if (j % 2 == 1)
         {
           std::cout << " ";
         }
