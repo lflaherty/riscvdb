@@ -45,7 +45,28 @@ ConsoleCommand::CmdRetType CmdBreak::run(std::vector<std::string>& args) {
   else
   {
     // try to find a symbol
-    // TODO add when ELF symbol loading is implemented
+    SimHost::SymbolMapType& symTbl = m_simHost.SymbolMap();
+    auto it = symTbl.find(location);
+    if (it == symTbl.end())
+    {
+      std::cerr << "could not find symbol " << location << std::endl;
+      return CmdRetType_ERROR;
+    }
+
+    SimHost::Symbol& sym = it->second;
+    // only set breakpoints on functions or notypes
+    // (labels can be stored in the ELF as notype)
+    if (sym.type == SimHost::FUNC || sym.type == SimHost::NOTYPE)
+    {
+      // symbol can be added as a breakpoint
+      breakAddr = sym.addr;
+      locationFound = true;
+    }
+    else
+    {
+      std::cerr << "can't set a breakpoint on this symbol type" << std::endl;
+      return CmdRetType_ERROR;
+    }
   }
 
   if (!locationFound)
