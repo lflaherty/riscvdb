@@ -124,7 +124,7 @@ Console::Console(SimHost& simHost)
     addCmd(std::make_shared<CmdQuit>());
 
     // Binary loading commands
-    addCmd(std::make_shared<CmdLoad>());
+    addCmd(std::make_shared<CmdLoad>(simHost));
 
     // Machine/sim control commands
     addCmd(std::make_shared<CmdRun>(simHost));
@@ -138,7 +138,6 @@ Console::Console(SimHost& simHost)
 
     // Breakpoint commands
     addCmd(std::make_shared<CmdBreak>());
-    (void)m_sim;
 
     using namespace linenoise_wrapper;
     Linenoise::setHintAppearance(Linenoise::COLOR_MAGENTA, false);

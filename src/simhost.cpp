@@ -60,6 +60,10 @@ int SimHost::LoadFile(const std::string& pathStr)
 
 int SimHost::LoadFile(FileLoader& loader)
 {
+    // erase memory first...
+    // this only supports one binary at a time
+    m_mem.Clear();
+
     m_loadedBin = loader.PathStr();  // make a copy for if we need to reload
     loader.LoadMemory(m_mem);
     return 0;
