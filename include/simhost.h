@@ -47,8 +47,13 @@ public:
 
     enum SymbolType
     {
+        NOTYPE,
+        OBJECT,
         FUNC,
-        OBJECT
+        SECTION,
+        COMMON,
+        TLS,
+        UNKNOWN,
     };
     struct Symbol
     {
