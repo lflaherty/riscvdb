@@ -66,6 +66,7 @@ ConsoleCommand::CmdRetType CmdPrint::run(std::vector<std::string>& args) {
       break;
 
     case MODE_MEM:
+    case MODE_MEM_SYMBOL:
       try
       {
         runPrintMem(parser);
@@ -155,9 +156,11 @@ void CmdPrint::ArgParse::parse(std::vector<std::string>& args)
       }
       else
       {
-        std::stringstream ss;
-        ss << "unknown argument " << arg;
-        throw std::invalid_argument(ss.str());
+        // try symbol name
+        memSymbolName = arg;
+        mode = MODE_MEM_SYMBOL;
+        argCounter++;
+        continue;
       }
     }
     else if (argCounter == 2)
@@ -198,6 +201,27 @@ void CmdPrint::runPrintRegStd(const CmdPrint::ArgParse& parser)
 
 void CmdPrint::runPrintMem(const CmdPrint::ArgParse& parser)
 {
+  MemoryMap::AddrType memAddr;
+
+  if (parser.mode == MODE_MEM_SYMBOL)
+  {
+    // try to find symbol
+    auto it = m_simHost.SymbolMap().find(parser.memSymbolName);
+    if (it == m_simHost.SymbolMap().end())
+    {
+      std::stringstream ss;
+      ss << "cannot find symbol " << parser.memSymbolName << std::endl;
+      throw std::invalid_argument(ss.str());
+    }
+
+    SimHost::Symbol& symb = it->second;
+    memAddr = symb.addr;
+  }
+  else
+  {
+    memAddr = parser.memAddr;
+  }
+
   if (parser.sizeSpecified)
   {
     // print array of bytes
@@ -212,7 +236,7 @@ void CmdPrint::runPrintMem(const CmdPrint::ArgParse& parser)
       for (MemoryMap::AddrType j = 0; j < bytesThisRow; j++)
       {
         std::byte b;
-        MemoryMap::AddrType addr = parser.memAddr + i + j;
+        MemoryMap::AddrType addr = memAddr + i + j;
         m_simHost.Memory().Get(addr, b);
 
         std::cout << std::hex << std::right <<std::setfill('0') << std::setw(2);
@@ -230,12 +254,14 @@ void CmdPrint::runPrintMem(const CmdPrint::ArgParse& parser)
   else
   {
     // print single word
-    uint32_t w = m_simHost.Memory().ReadWord(parser.memAddr);
+    uint32_t w = m_simHost.Memory().ReadWord(memAddr);
 
     std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
-    std::cout << parser.memAddr << ": ";
+    std::cout << memAddr << ": ";
     std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
-    std::cout << w << std::endl;
+    std::cout << w;
+    std::cout << std::dec;
+    std::cout << " (" << static_cast<long>(w) << ")" << std::endl;
   }
 }
 

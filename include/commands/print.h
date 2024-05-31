@@ -27,6 +27,7 @@ private:
         MODE_REGISTER_PC,
         MODE_REGISTER_STANDARD,
         MODE_MEM,
+        MODE_MEM_SYMBOL,
         MODE_UNKNOWN,
     };
 
@@ -37,6 +38,7 @@ private:
         bool sizeSpecified;
         RiscvProcessor::Register regNum;
         MemoryMap::AddrType memAddr;
+        std::string memSymbolName;
         MemoryMap::AddrType memSize;
 
         ArgParse()
