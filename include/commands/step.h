@@ -1,14 +1,14 @@
-#ifndef RISCVDB_COMMANDS_CONTINUE_H
-#define RISCVDB_COMMANDS_CONTINUE_H
+#ifndef RISCVDB_COMMANDS_STEP_H
+#define RISCVDB_COMMANDS_STEP_H
 
 #include "console.h"
 #include <string>
 
 namespace riscvdb {
 
-class CmdContinue : public ConsoleCommand {
+class CmdStep : public ConsoleCommand {
 public:
-    CmdContinue(SimHost& simHost);
+    CmdStep(SimHost& simHost);
 
     ConsoleCommand::CmdRetType run(std::vector<std::string>& args);
     std::string nameLong();
@@ -25,4 +25,4 @@ private:
 
 } // namespace riscvdb
 
-#endif // RISCVDB_COMMANDS_CONTINUE_H
+#endif // RISCVDB_COMMANDS_STEP_H

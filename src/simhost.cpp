@@ -103,6 +103,13 @@ void SimHost::Run(unsigned long numInstructions)
         throw std::runtime_error("executable already running");
     }
 
+    // if a previous run hasn't terminated the thread, do that
+    // (thread only runs on m_state == RUNNING)
+    if (m_simRunner.joinable())
+    {
+        m_simRunner.join();
+    }
+
     m_state = RUNNING;
     m_simRunner = std::thread(&SimHost::runSimWorker, this, numInstructions);
 }
