@@ -39,6 +39,8 @@ public:
 
     static const std::string EXT;
 
+    // TODO add support for loading symbols
+
 private:
     // Checks whether m_filebytes contains a valid ELF file
     void LoadHeader();
