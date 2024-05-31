@@ -66,7 +66,7 @@ int SimHost::LoadFile(FileLoader& loader)
     // erase memory first...
     // this only supports one binary at a time
     m_mem.Clear();
-    // TODO clear symbols
+    m_symbolMap.clear();
 
     m_loadedBin = loader.PathStr();  // make a copy for if we need to reload
     loader.LoadMemory(*this);
