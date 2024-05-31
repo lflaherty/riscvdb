@@ -20,7 +20,7 @@
 #include "commands/break.h"
 #include "commands/delete.h"
 #include "commands/print.h"
-#include "commands/memory.h"
+#include "commands/info.h"
 #include "commands/step.h"
 #include "commands/verbose.h"
 #include "commands/quit.h"
@@ -133,7 +133,7 @@ Console::Console(SimHost& simHost)
 
     // Memory/register commands
     addCmd(std::make_shared<CmdPrint>(simHost));
-    // TODO: add "info" to print all registers
+    addCmd(std::make_shared<CmdInfo>(simHost));
     // TODO: add command to set registers
 
     // Breakpoint commands

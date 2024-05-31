@@ -6,6 +6,7 @@ target_sources(riscvdb PRIVATE
     break.cpp
     delete.cpp
     print.cpp
+    info.cpp
     step.cpp
     verbose.cpp
     quit.cpp
