@@ -24,7 +24,7 @@ ConsoleCommand::CmdRetType CmdInfo::run(std::vector<std::string>& args) {
 
   // PC
   std::cout << "PC = 0x";
-  std::cout << std::hex << std::setfill('0') << std::setw(8);
+  std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
   std::cout << m_simHost.Processor().GetPC();
   std::cout << std::endl;
 
@@ -32,7 +32,7 @@ ConsoleCommand::CmdRetType CmdInfo::run(std::vector<std::string>& args) {
   for (unsigned int regNum = 0; regNum < 32; ++regNum)
   {
     std::cout << std::dec << "x" << regNum << " = 0x";
-    std::cout << std::hex << std::setfill('0') << std::setw(8);
+    std::cout << std::hex << std::right <<std::setfill('0') << std::setw(8);
     std::cout << m_simHost.Processor().GetReg(regNum);
     std::cout << std::endl;
   }
