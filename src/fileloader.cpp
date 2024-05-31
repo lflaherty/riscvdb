@@ -1,6 +1,7 @@
 #include "fileloader.h"
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <cstring>
 #include <algorithm>
@@ -55,51 +56,10 @@ ElfFileLoader::ElfFileLoader(const std::string& path)
     LoadHeader();
 }
 
-void ElfFileLoader::LoadMemory(MemoryMap& mem)
+void ElfFileLoader::LoadMemory(SimHost& simHost)
 {
-    std::cout << "Found program headers:" << std::endl;
-
-    MemoryMap::AddrType loadedSize = 0;
-
-    Elf32_Off offset = m_header.e_phoff;
-    for (Elf32_Half i = 0; i < m_header.e_phnum; ++i)
-    {
-        std::cout << i << " ";
-
-        Elf32_Phdr progHdr;
-        std::memcpy(&progHdr, m_filebytes.data() + offset,
-                    sizeof(progHdr));
-
-        offset += sizeof(progHdr);
-
-        if (progHdr.p_type == PT_LOAD)
-        {
-            std::cout << "LOAD";
-            std::cout << std::hex;
-            std::cout << "    VirtAddr = 0x" << progHdr.p_paddr;
-            std::cout << "    MemSize = 0x" << progHdr.p_memsz;
-            std::cout << std::endl;
-
-            loadedSize += progHdr.p_memsz;
-
-            // TODO probably don't need an intermediate copy...
-            std::vector<std::byte> sectionData(progHdr.p_filesz);
-            std::copy(m_filebytes.begin() + progHdr.p_offset,
-                      m_filebytes.begin() + progHdr.p_offset + progHdr.p_filesz,
-                      sectionData.begin());
-
-            mem.Put(progHdr.p_paddr, sectionData);
-        }
-        else
-        {
-            std::cout << "(unused)" << std::endl;
-        }
-    }
-
-    std::cout << std::endl;
-    std::cout << std::dec;
-    std::cout << "Loaded " << loadedSize << " B into memory" << std::endl;
-    std::cout << std::endl;
+    LoadProgramHeaders(simHost.Memory());
+    LoadSymbols(simHost);
 }
 
 ElfFileLoader::ElfClass ElfFileLoader::GetElfClass() const
@@ -152,6 +112,62 @@ void ElfFileLoader::LoadHeader()
     {
         throw std::runtime_error("invalid elf file: only executable files are supported");
     }
+}
+
+void ElfFileLoader::LoadProgramHeaders(MemoryMap& mem)
+{
+    std::cout << "Found program headers:" << std::endl;
+
+    MemoryMap::AddrType loadedSize = 0;
+
+    Elf32_Off offset = m_header.e_phoff;
+    for (Elf32_Half i = 0; i < m_header.e_phnum; ++i)
+    {
+        std::cout << i << " ";
+
+        Elf32_Phdr progHdr;
+        std::memcpy(&progHdr, m_filebytes.data() + offset,
+                    sizeof(progHdr));
+
+        offset += sizeof(progHdr);
+
+        if (progHdr.p_type == PT_LOAD)
+        {
+            std::cout << "LOAD  ";
+            std::cout << "  VirtAddr = 0x";
+            std::cout << std::hex << std::setw(8) << std::left << std::setfill(' ');
+            std::cout << progHdr.p_paddr;
+            std::cout << "  MemSize = 0x";
+            std::cout << std::hex << std::setw(8) << std::left << std::setfill(' ');
+            std::cout << progHdr.p_memsz;
+            std::cout << std::endl;
+
+            loadedSize += progHdr.p_memsz;
+
+            // TODO probably don't need an intermediate copy...
+            std::vector<std::byte> sectionData(progHdr.p_filesz);
+            std::copy(m_filebytes.begin() + progHdr.p_offset,
+                      m_filebytes.begin() + progHdr.p_offset + progHdr.p_filesz,
+                      sectionData.begin());
+
+            mem.Put(progHdr.p_paddr, sectionData);
+        }
+        else
+        {
+            std::cout << "(unused)" << std::endl;
+        }
+    }
+
+    std::cout << std::endl;
+    std::cout << std::dec;
+    std::cout << "Loaded " << loadedSize << " B into memory" << std::endl;
+    std::cout << std::endl;
+}
+
+void ElfFileLoader::LoadSymbols(SimHost& simHost)
+{
+    // TODO
+    (void)simHost;
 }
 
 } // namespace riscvdb

@@ -5,14 +5,18 @@
 #include <vector>
 #include "elf.h"
 #include "memorymap.h"
+#include "simhost.h"
 
 namespace riscvdb
 {
 
+// forward declaration
+class SimHost;
+
 class FileLoader {
 public:
     FileLoader(const std::string& pathStr);
-    virtual void LoadMemory(MemoryMap& mem) = 0;
+    virtual void LoadMemory(SimHost& simHost) = 0;
 
     const std::string& PathStr() const;
 
@@ -33,17 +37,18 @@ public:
 
     ElfFileLoader(const std::string& path);
 
-    void LoadMemory(MemoryMap& mem);
+    void LoadMemory(SimHost& simHost);
 
     ElfClass GetElfClass() const;
 
     static const std::string EXT;
 
-    // TODO add support for loading symbols
-
 private:
     // Checks whether m_filebytes contains a valid ELF file
     void LoadHeader();
+
+    void LoadProgramHeaders(MemoryMap& mem);
+    void LoadSymbols(SimHost& simHost);
 
     Elf32_Ehdr m_header;
     ElfClass m_elfClass;
