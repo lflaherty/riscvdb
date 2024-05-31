@@ -141,6 +141,24 @@ void SimHost::runSimWorker(unsigned long numInstructions)
         if (numInstructions > 0 && instCounter == numInstructions)
         {
             m_state = PAUSED;
+            continue;
+        }
+
+        // check for illegal instruction interrupt
+        uint32_t csr_mcause = m_processor.GetCSRValue(RiscvProcessor::csr_mcause);
+        // TODO the magic number here (2) is the mcause value for invalid instruction
+        // should move the magic number back to something in riscv_processor.h that
+        // is publicly accessible.
+        if ((csr_mcause & 0xF) == 2)
+        {
+            // illegal instruction :(
+            std::cout << "illegal instruction at PC = 0x";
+            std::cout << std::hex << std::setfill('0') << std::setw(8);
+            std::cout << m_processor.GetPC();
+            std::cout << std::endl;
+
+            m_state = TERMINATED;
+            continue;
         }
 
         // TODO check for if breakpoint hit
