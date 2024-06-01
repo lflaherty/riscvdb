@@ -70,6 +70,15 @@ int SimHost::LoadFile(FileLoader& loader)
 
     m_loadedBin = loader.PathStr();  // make a copy for if we need to reload
     loader.LoadMemory(*this);
+
+    // if a _start symbol is defined, we should set the PC to that location
+    auto it = m_symbolMap.find("_start");
+    if (it != m_symbolMap.end())
+    {
+        MemoryMap::AddrType startAddr = it->second.addr;
+        m_processor.SetPC(startAddr);
+    }
+    std::cout << std::hex << m_processor.GetPC() << std::endl;
     return 0;
 }
 
@@ -198,7 +207,7 @@ void SimHost::runSimWorker(unsigned long numInstructions)
         {
             // illegal instruction :(
             std::cout << "illegal instruction at PC = 0x";
-            std::cout << std::hex << std::setfill('0') << std::setw(8);
+            std::cout << std::hex << std::right << std::setfill('0') << std::setw(8);
             std::cout << m_processor.GetPC();
             std::cout << std::endl;
 
