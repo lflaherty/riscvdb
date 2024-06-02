@@ -78,7 +78,6 @@ int SimHost::LoadFile(FileLoader& loader)
         MemoryMap::AddrType startAddr = it->second.addr;
         m_processor.SetPC(startAddr);
     }
-    std::cout << std::hex << m_processor.GetPC() << std::endl;
     return 0;
 }
 
