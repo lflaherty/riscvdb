@@ -764,17 +764,14 @@ void RiscvProcessor::execute_jalr() {
 
 void RiscvProcessor::execute_lb() {
   uint32_t address = m_reg[m_decoded_rs1] + m_decoded_imm;
-  uint32_t data = m_mem.ReadWord(address);
 
-  // get the byte out of the word
-  uint32_t subword = address%4;
-  data &= 0xFF << (subword*8);
-  data >>= subword*8;
+  std::byte b;
+  m_mem.Get(address, b);
+  uint32_t data = static_cast<uint32_t>(b) & 0xff;
 
   // sign extend
   uint32_t data_sign = (data >> 7) & 0x1;
   if (data_sign == 0x1) {
-    // sign extend
     data |= 0xFFFFFF00;
   }
 
@@ -783,7 +780,14 @@ void RiscvProcessor::execute_lb() {
 
 void RiscvProcessor::execute_lh() {
   uint32_t address = m_reg[m_decoded_rs1] + m_decoded_imm;
-  uint32_t data = m_mem.ReadWord(address);
+
+  std::byte b0, b1;
+  m_mem.Get(address + 0, b0);
+  m_mem.Get(address + 1, b1);
+
+  uint32_t data = 0;
+  data |= (static_cast<uint32_t>(b0) & 0xff) << 0;
+  data |= (static_cast<uint32_t>(b1) & 0xff) << 8;
 
   // Check address alignment
   if (address % 2 != 0) {
@@ -792,21 +796,9 @@ void RiscvProcessor::execute_lh() {
     return;
   }
 
-  // get the imporant halfword out of the data
-  uint32_t subword = address%4;  
-  data &= 0xFFFF << (subword*8);
-  data >>= subword*8;
-
-  if (subword == 3) {
-    // need to read from the next word
-    uint32_t data2 = m_mem.ReadWord(address+4);
-    data |= (data2 << 8) & 0x0000FF00;
-  }
-
   // sign extend
   uint32_t data_sign = (data >> 15) & 0x1;
   if (data_sign == 0x1) {
-    // sign extend
     data |= 0xFFFF0000;
   }
 
@@ -829,36 +821,30 @@ void RiscvProcessor::execute_lw() {
 
 void RiscvProcessor::execute_lbu() {
   uint32_t address = m_reg[m_decoded_rs1] + m_decoded_imm;
-  uint32_t data = m_mem.ReadWord(address);
 
-  // get the byte out of the word
-  uint32_t subword = address%4;
-  data &= 0xFF << (subword*8);
-  data >>= subword*8;
+  std::byte b;
+  m_mem.Get(address, b);
+  uint32_t data = static_cast<uint32_t>(b) & 0xff;
 
   SetReg(m_decoded_rd, data);
 }
 
 void RiscvProcessor::execute_lhu() {
   uint32_t address = m_reg[m_decoded_rs1] + m_decoded_imm;
-  uint32_t data = m_mem.ReadWord(address);
+
+  std::byte b0, b1;
+  m_mem.Get(address + 0, b0);
+  m_mem.Get(address + 1, b1);
+
+  uint32_t data = 0;
+  data |= (static_cast<uint32_t>(b0) & 0xff) << 0;
+  data |= (static_cast<uint32_t>(b1) & 0xff) << 8;
 
   // Check address alignment
   if (address % 2 != 0) {
     // Alignment exception
     RaiseException(ex_load_address_misaligned);
     return;
-  }
-
-  // get the imporant halfword out of the data
-  uint32_t subword = address%4;
-  data &= 0xFFFF << (subword*8);
-  data >>= subword*8;
-
-  if (subword == 3) {
-    // need to read from the next word
-    uint32_t data2 = m_mem.ReadWord(address+4);
-    data |= (data2 << 8) & 0x0000FF00;
   }
 
   SetReg(m_decoded_rd, data);
@@ -868,12 +854,8 @@ void RiscvProcessor::execute_sb() {
   uint32_t address = m_reg[m_decoded_rs1] + m_decoded_imm;
   uint32_t data = m_reg[m_decoded_rs2];
 
-  // put the byte in the write memory byte
-  uint32_t alignment = address%4;
-  uint32_t mask = 0xFF << (8*alignment);
-  data <<= 8*alignment;
-
-  m_mem.WriteWord(address, data, mask);
+  const std::byte b{static_cast<uint8_t>(data & 0xff)};
+  m_mem.Put(address, b);
 }
 
 void RiscvProcessor::execute_sh() {
@@ -887,19 +869,11 @@ void RiscvProcessor::execute_sh() {
     return;
   }
 
-  // put the byte in the write memory byte
-  uint32_t alignment = address%4;
-  uint32_t mask = 0xFFFF << (8*alignment);
-  data <<= 8*alignment;
-
-  m_mem.WriteWord(address, data, mask);
-
-  if (alignment == 3) {
-    // need two words for this
-    // write the upper word
-    uint32_t data2 = (data >> 24) & 0xFF;
-    m_mem.WriteWord(address+4, data2, 0xFF);
-  }
+  const std::vector<std::byte> bytes = {
+    std::byte{static_cast<uint8_t>((data >> 0) & 0xff)},
+    std::byte{static_cast<uint8_t>((data >> 8) & 0xff)}
+  };
+  m_mem.Put(address, bytes);
 }
 
 void RiscvProcessor::execute_sw() {
@@ -931,28 +905,28 @@ void RiscvProcessor::execute_bne() {
 }
 
 void RiscvProcessor::execute_blt() {
-  if ((int32_t)m_reg[m_decoded_rs1] < (int32_t)m_reg[m_decoded_rs2]) {
+  if (static_cast<int32_t>(m_reg[m_decoded_rs1]) < static_cast<int32_t>(m_reg[m_decoded_rs2])) {
     // Perform jump
     m_pc += m_decoded_imm-4;  // -4 (execute function will increment by 4)
   }
 }
 
 void RiscvProcessor::execute_bge() {
-  if ((int32_t)m_reg[m_decoded_rs1] >= (int32_t)m_reg[m_decoded_rs2]) {
+  if (static_cast<int32_t>(m_reg[m_decoded_rs1]) >= static_cast<int32_t>(m_reg[m_decoded_rs2])) {
     // Perform jump
     m_pc += m_decoded_imm-4;  // -4 (execute function will increment by 4)
   }
 }
 
 void RiscvProcessor::execute_bltu() {
-  if ((uint32_t)m_reg[m_decoded_rs1] < (uint32_t)m_reg[m_decoded_rs2]) {
+  if (static_cast<uint32_t>(m_reg[m_decoded_rs1]) < static_cast<uint32_t>(m_reg[m_decoded_rs2])) {
     // Perform jump
     m_pc += m_decoded_imm-4;  // -4 (execute function will increment by 4)
   }
 }
 
 void RiscvProcessor::execute_bgeu() {
-  if ((uint32_t)m_reg[m_decoded_rs1] >= (uint32_t)m_reg[m_decoded_rs2]) {
+  if (static_cast<uint32_t>(m_reg[m_decoded_rs1]) >= static_cast<uint32_t>(m_reg[m_decoded_rs2])) {
     // Perform jump
     m_pc += m_decoded_imm-4;  // -4 (execute function will increment by 4)
   }
@@ -965,7 +939,7 @@ void RiscvProcessor::execute_addi() {
 }
 
 void RiscvProcessor::execute_slti() {
-  if ((int32_t)m_reg[m_decoded_rs1] < (int32_t)m_decoded_imm) {
+  if (static_cast<int32_t>(m_reg[m_decoded_rs1]) < (int32_t)m_decoded_imm) {
     // Write 1
     SetReg(m_decoded_rd, 0x1);
   } else {
@@ -982,7 +956,7 @@ void RiscvProcessor::execute_sltiu() {
       SetReg(m_decoded_rd, 0x0);
     }
   } else {
-    if ((uint32_t)m_reg[m_decoded_rs1] < (uint32_t)m_decoded_imm) {
+    if (static_cast<uint32_t>(m_reg[m_decoded_rs1]) < (uint32_t)m_decoded_imm) {
       // Write 1
       SetReg(m_decoded_rd, 0x1);
     } else {
@@ -1051,7 +1025,7 @@ void RiscvProcessor::execute_sll() {
 }
 
 void RiscvProcessor::execute_slt() {
-  if ((int32_t)m_reg[m_decoded_rs1] < (int32_t)m_reg[m_decoded_rs2]) {
+  if (static_cast<int32_t>(m_reg[m_decoded_rs1]) < static_cast<int32_t>(m_reg[m_decoded_rs2])) {
     // Write 1
     SetReg(m_decoded_rd, 0x1);
   } else {
@@ -1060,7 +1034,7 @@ void RiscvProcessor::execute_slt() {
 }
 
 void RiscvProcessor::execute_sltu() {
-  if ((uint32_t)m_reg[m_decoded_rs2] == 0x1) {
+  if (static_cast<uint32_t>(m_reg[m_decoded_rs2]) == 0x1) {
     // special case
     if (m_reg[m_decoded_rs1] == 0) {
       SetReg(m_decoded_rd, 0x1);
@@ -1068,7 +1042,7 @@ void RiscvProcessor::execute_sltu() {
       SetReg(m_decoded_rd, 0x0);
     }
   } else {
-    if ((uint32_t)m_reg[m_decoded_rs1] < (uint32_t)m_reg[m_decoded_rs2]) {
+    if (static_cast<uint32_t>(m_reg[m_decoded_rs1]) < static_cast<uint32_t>(m_reg[m_decoded_rs2])) {
       // Write 1
       SetReg(m_decoded_rd, 0x1);
     } else {
