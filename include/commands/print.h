@@ -35,6 +35,7 @@ private:
     enum PrintFormat
     {
         PRINT_RAW,
+        PRINT_STRING,
         PRINT_INT8,
         PRINT_UINT8,
         PRINT_INT16,
@@ -90,6 +91,8 @@ void CmdPrint::svalue(std::ostream& os, T value, const PrintFormat format)
     case PRINT_RAW:
         os << static_cast<uint32_t>(value);
         break;
+    case PRINT_STRING:
+        os << static_cast<char>(value);
     case PRINT_INT8:
     {
         // we cast to int rather than int8_t because cout will format this as a char

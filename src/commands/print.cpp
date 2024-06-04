@@ -21,15 +21,16 @@ const std::string CmdPrint::MSG_USAGE =
 "When specifying a size, an array of bytes of that size will be printed\n"
 "\n"
 "print_type (optional) can be used to change how data is printed.\n"
-"options are: raw, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t,\n"
-"             int64_t, uint64_t.\n"
+"options are: raw, string, int8_t, uint8_t, int16_t, uint16_t,\n"
+"             int32_t, uint32_t, int64_t, uint64_t.\n"
 "default is 'raw', which prints the memory layout.";
 
 const std::vector<std::string> CmdPrint::SUPPORTED_TYPE_STRINGS =
-{ "raw", "int8_t", "uint8_t", "int16_t", "uint16_t", "int32_t", "uint32_t", "int64_t", "uint64_t" };
+{ "raw", "string", "int8_t", "uint8_t", "int16_t", "uint16_t", "int32_t", "uint32_t", "int64_t", "uint64_t" };
 
 const std::unordered_map<CmdPrint::PrintFormat, unsigned int> CmdPrint::FORMAT_SIZES = {
   // note no "raw", since that isn't used in this way
+  { CmdPrint::PRINT_STRING, 1 },
   { CmdPrint::PRINT_INT8, 1 },
   { CmdPrint::PRINT_UINT8, 1 },
   { CmdPrint::PRINT_INT16, 2 },
@@ -201,6 +202,10 @@ void CmdPrint::ArgParse::parse(std::vector<std::string>& args)
         if (arg == "raw")
         {
           format = PRINT_RAW;
+        }
+        else if (arg == "string" || arg == "str")
+        {
+          format = PRINT_STRING;
         }
         else if (arg == "int8_t")
         {
@@ -374,33 +379,56 @@ void CmdPrint::runPrintMemArray(const CmdPrint::PrintFormat format, const Memory
 
   unsigned int numElements = memSize / elementSize;
 
-  std::cout << "{ ";
-
-  for (unsigned int i = 0; i < numElements; ++i)
+  if (format == PrintFormat::PRINT_STRING)
   {
-    // get value byte by byte...
-    uint64_t x = 0;
-    unsigned int shift = 0;
-    for (unsigned int j = 0; j < elementSize; ++j)
-    {
-      std::byte byte_i;
-      MemoryMap::AddrType byteAddr = memAddr + elementSize * i + j;
-      m_simHost.Memory().Get(byteAddr, byte_i);
-
-      x |= (static_cast<uint64_t>(byte_i) & 0xff) << shift;
-      shift += 8;
-    }
-
+    // print characters
     std::cout << std::dec << std::left << std::setw(0);
-    svalue(std::cout, x, format);
-
-    if (i < (numElements - 1))
+    for (unsigned int i = 0; i < numElements; ++i)
     {
-      std::cout << ", ";
-    }
-  }
+      std::byte b;
+      MemoryMap::AddrType byteAddr = memAddr + i;
+      m_simHost.Memory().Get(byteAddr, b);
 
-  std::cout << " }" << std::endl;
+      if (b == std::byte{'\0'})
+      {
+        break;
+      }
+
+      svalue(std::cout, static_cast<char>(b), format);
+    }
+    std::cout << std::endl;
+  }
+  else
+  {
+    // print array
+    std::cout << "{ ";
+
+    for (unsigned int i = 0; i < numElements; ++i)
+    {
+      // get value byte by byte...
+      uint64_t x = 0;
+      unsigned int shift = 0;
+      for (unsigned int j = 0; j < elementSize; ++j)
+      {
+        std::byte byte_i;
+        MemoryMap::AddrType byteAddr = memAddr + elementSize * i + j;
+        m_simHost.Memory().Get(byteAddr, byte_i);
+
+        x |= (static_cast<uint64_t>(byte_i) & 0xff) << shift;
+        shift += 8;
+      }
+
+      std::cout << std::dec << std::left << std::setw(0);
+      svalue(std::cout, x, format);
+
+      if (i < (numElements - 1))
+      {
+        std::cout << ", ";
+      }
+    }
+
+    std::cout << " }" << std::endl;
+  }
 }
 
 } // namespace riscvdb
