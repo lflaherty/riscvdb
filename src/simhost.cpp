@@ -189,6 +189,16 @@ void SimHost::runSimWorker(unsigned long numInstructions)
 {
     unsigned long instCounter = 0;
 
+    // see if we have an _exit symbol to automatically terminate on
+    auto symbol_it = m_symbolMap.find("_exit");
+    bool hasExit = false;
+    MemoryMap::AddrType exitAddr = 0;
+    if (symbol_it != m_symbolMap.end())
+    {
+        hasExit = true;
+        exitAddr = symbol_it->second.addr;
+    }
+
     while(m_state == RUNNING)
     {
         instCounter++;
@@ -236,6 +246,13 @@ void SimHost::runSimWorker(unsigned long numInstructions)
             std::cout << "breakpoint " << bkpt_it->second << " hit" << std::endl;
 
             m_state = PAUSED;
+            continue;
+        }
+
+        // check for exit symbol
+        if (hasExit && currentPC == exitAddr)
+        {
+            m_state = TERMINATED;
             continue;
         }
     }
