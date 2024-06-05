@@ -1,3 +1,3 @@
-load quicksort_stl.elf
+load quicksort_libc.elf
 run
 print rand_array 0x800 uint32_t

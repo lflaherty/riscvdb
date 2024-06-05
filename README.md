@@ -80,7 +80,7 @@ The classes logically interact as:
 For RAM emulation performance, the RAM model is a map of memory addresses to 1KiB blocks.
 
 # Future Work
-## CSR Vector Control
+## CSR Control
 The RV32I CPU implementation implements the CSR registers and privilege modes, but the console currently does not have commands that configure the CSR registers, nor do any examples demonstrate configuration of these features. The main implication of this is that when a machine trap occurs, the PC is loaded with the value of mtvec. But this is set to zero, so unless the ELF is explicitly built to put the trap handler at 0x0, the machine will either re-start execution from the beginning (if \_start=0x0), or just immediately raise an unknown instruction trap (if 0x0 is empty) which will terminate the program.
 
 ## Peripherals

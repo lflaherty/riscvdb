@@ -2,7 +2,7 @@ CC=riscv32-unknown-elf-gcc
 
 CFLAGS=-march=rv32i -mabi=ilp32
 
-APP_NAME=quicksort_stl
+APP_NAME=quicksort_libc
 
 all: $(APP_NAME).elf
 
