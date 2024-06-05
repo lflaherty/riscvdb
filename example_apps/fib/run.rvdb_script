@@ -1,0 +1,4 @@
+load fib.elf
+run
+print fib_result
+quit

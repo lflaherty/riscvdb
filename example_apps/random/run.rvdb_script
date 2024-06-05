@@ -1,0 +1,4 @@
+load rand.elf
+run
+print rand_array 0x50
+quit
