@@ -18,6 +18,8 @@ git submodule init
 git submodule update
 ```
 
+If running on macOS, you will also need to ensure the clang include path contains a `elf.h` that defines `EM_RISCV`.
+
 Then run CMake via the build script:
 ```
 ./build.sh
@@ -47,7 +49,7 @@ These examples will show how to build a RISC-V RV32I binary, how to load and exe
 
 Under `example_apps/` there are several small example programs that can be cross compiled using a RISCV cross compiler and executed on the RV32I CPU. These form examples of how to execute code on the RV32I simulated CPU.
 
-To build the RISCV apps, you will need `riscv64-unknown-elf-gcc`.
+To build the RISCV apps, you will need [`riscv32-unknown-elf-gcc` with newlib](https://github.com/riscv-collab/riscv-gnu-toolchain?tab=readme-ov-file#installation-newlib).
 
 The example apps vary in how much they depend on the C standard library (from not at all, and defining their own startup assembly, to fully integrated).
 

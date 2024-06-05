@@ -1,4 +1,4 @@
 load fib.elf
 run
-print fib_result
+print fib_result int16_t
 quit

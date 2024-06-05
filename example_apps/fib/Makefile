@@ -1,6 +1,6 @@
-AS=riscv64-elf-as
-CC=riscv64-elf-gcc
-LD=riscv64-elf-ld
+CC=riscv32-unknown-elf-gcc
+AS=riscv32-unknown-elf-as
+LD=riscv32-unknown-elf-ld
 
 ASFLAGS=-march=rv32i
 CFLAGS=-march=rv32i -mabi=ilp32
@@ -23,4 +23,4 @@ start.o: start.s
 
 clean:
 	rm -f start.o $(APP_NAME).o
-	rm -f $(OUTPUT)
+	rm -f $(APP_NAME).elf
