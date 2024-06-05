@@ -4,6 +4,7 @@
 #include "console.h"
 #include <string>
 #include <unordered_map>
+#include <iostream>
 #include "simhost.h"
 #include "memorymap.h"
 #include "riscv_processor.h"
@@ -89,10 +90,11 @@ void CmdPrint::svalue(std::ostream& os, T value, const PrintFormat format)
     switch (format)
     {
     case PRINT_RAW:
-        os << static_cast<uint32_t>(value);
+        os << static_cast<unsigned int>(value);
         break;
     case PRINT_STRING:
         os << static_cast<char>(value);
+        break;
     case PRINT_INT8:
     {
         // we cast to int rather than int8_t because cout will format this as a char
